@@ -1,0 +1,106 @@
+.el-steps {
+  margin-top: 0;
+  padding: 0 !important;
+  border: 1px solid #cdd0d3;
+}
+.el-step {
+  flex-basis: 0 !important;
+  border-right: 1px solid #cdd0d3;
+  flex: 1 !important;
+}
+
+.el-step__head {
+  width: 100% !important;
+  height: 8px;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.el-step__main {
+  display: none !important;
+}
+
+.el-step__head.is-success {
+  background-color: #67c23a;
+}
+
+.el-step__head.is-error {
+  background-color: #fe5957;
+}
+
+.el-step__head.is-process {
+  background-color: #ffdd99;
+}
+
+.el-step__icon,
+.el-step__arrow {
+  display: none !important;
+}
+
+.form-control {
+  display: flex;
+}
+
+.form-control .el-form-item {
+  flex: 1;
+}
+
+.form-control .el-form-item:not(:nth-child(1)) {
+  margin-left: 16px;
+}
+
+.el-form-item__label-wrap {
+  margin: 0 !important;
+  min-width: 180px;
+}
+
+.el-form-item.is-required .el-form-item__label::before {
+  display: none !important;
+}
+
+.el-form-item.is-required .el-form-item__label::after {
+  content: "*";
+  color: #f56c6c;
+  margin-left: 4px;
+  display: block;
+}
+
+.form-btn .el-form-item__content {
+  justify-content: end;
+  margin-top: 16px;
+}
+
+.form-kpi {
+  position: fixed;
+  right: 0;
+  width: 1140px;
+  height: 100vh;
+  z-index: 999;
+  top: 0;
+  background: rgba(255, 255, 255, 1);
+  transition: all 0.3s ease-in-out !important;
+  padding: 15px 15px 20px;
+  right: -100%;
+}
+
+.form-kpi.active {
+  right: 0;
+}
+
+.overlay {
+  position: absolute;
+  z-index: 998;
+  background: black;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.3s ease-in-out;
+}
+
+.overlay.active {
+  visibility: visible;
+  opacity: 0.4;
+}
