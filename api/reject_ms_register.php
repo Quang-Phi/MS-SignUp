@@ -52,21 +52,25 @@ try {
             $reviewerIds = $post["user_id"];
         } else {
             $list = $reviewerStage->GetList([], $arrFields2);
-            $reviewerIds = array_unique(
-                array_column(
-                    array_filter($list, function ($item) use ($stage) {
-                        return $item["stage_id"] < $stage;
-                    }),
-                    "reviewer_id"
-                )
+            $reviewerIds = array_column(
+                array_filter($list, function ($item) use ($stage) {
+                    return $item["stage_id"] < $stage;
+                }),
+                "reviewer_id"
             );
+            $reviewerIds = array_unique(array_merge($reviewerIds, [$post["user_id"]]));
         }
 
         $requestData = [
             "id" => $post["id"],
             "user_name" => $post["user_name"],
-            "comments" => $post["comments"],
+            "user_email" => $post["user_email"],
+            "employee_id" => $post["employee_id"],
+            "department" => $post["department"],
+            "type_ms" => $post["type_ms"],
+            "team_ms" => $post["team_ms"],
             "reviewer" => $post["reviewer"],
+            "comments" => $post["comments"],
         ];
 
         if (!empty($reviewerIds)) {

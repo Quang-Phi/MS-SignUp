@@ -18,15 +18,17 @@ class MsSignupList extends CDBResult
     $this->QUERY_TABLE = self::SCHEMA . "." . self::TABLE_NAME;
   }
 
-  public function GetList($arOrder = array(), $arFilter = array())
+  public function GetList($arOrder = array(), $arFilter = array(), $arOptions = array())
   {
     global $USER;
     $userID = $USER->GetID();
     $admin = $USER->IsAdmin();
+
+    // Base query
     if ($admin) {
-      $query = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl";
+      $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl";
     } else {
-      $query = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
+      $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
                      WHERE msl.user_id = '$userID'
                      UNION
                      SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
@@ -35,69 +37,62 @@ class MsSignupList extends CDBResult
                      AND r.stage_id = msl.stage_id";
     }
 
-    // Thêm điều kiện filter nếu có
+    // Add filters
     if (!empty($arFilter)) {
       if (!$admin) {
-        $query = "SELECT * FROM ($query) as filtered_msl WHERE ";
+        $baseQuery = "SELECT * FROM ($baseQuery) as filtered_msl WHERE ";
       } else {
-        $query .= " WHERE ";
+        $baseQuery .= " WHERE ";
       }
 
       $whereClauses = array();
       foreach ($arFilter as $field => $value) {
         $whereClauses[] = "$field = '$value'";
       }
-      $query .= implode(' AND ', $whereClauses);
+      $baseQuery .= implode(' AND ', $whereClauses);
     }
 
-    // Thêm order nếu có
+    // Get total count before adding ORDER BY, LIMIT and OFFSET
+    $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
+    $totalRes = $this->db->Query($totalQuery);
+    $total = $totalRes->Fetch();
+
+    // Add ORDER BY
     if (!empty($arOrder)) {
+      $baseQuery .= " ORDER BY ";
       if (!$admin && !empty($arFilter)) {
-        $query .= " ORDER BY ";
         foreach ($arOrder as $field => $direction) {
-          $query .= "$field $direction, ";
+          $baseQuery .= "$field $direction, ";
         }
       } else {
-        $query .= " ORDER BY ";
         foreach ($arOrder as $field => $direction) {
-          $arRes['reviewers'] = $this->GetReviewers($arRes['id']);
-          $query .= "msl.$field $direction, ";
+          $baseQuery .= "msl.$field $direction, ";
         }
       }
-      $query = rtrim($query, ', ');
+      $baseQuery = rtrim($baseQuery, ', ');
     }
 
-    $dbRes = $this->db->Query($query);
+    // Add LIMIT and OFFSET
+    if (!empty($arOptions['limit'])) {
+      $baseQuery .= " LIMIT " . intval($arOptions['limit']);
+    }
+    if (!empty($arOptions['offset'])) {
+      $baseQuery .= " OFFSET " . intval($arOptions['offset']);
+    }
+
+    // Execute final query
+    $dbRes = $this->db->Query($baseQuery);
     $arResult = array();
     while ($arRes = $dbRes->Fetch()) {
       $arRes['reviewers'] = $this->GetReviewers($arRes['id']);
       $arResult[] = $arRes;
     }
-    return $arResult;
+
+    return array(
+      'items' => $arResult,
+      'total' => intval($total['total'])
+    );
   }
-
-  //   private function GetReviewers($msListId)
-  //   {
-  //       $query = "SELECT rs.reviewer_id, rs.stage_id, s.require_kpi
-  //                 FROM " . self::SCHEMA . ".reviewer_stage rs
-  //                 LEFT JOIN " . self::SCHEMA . ".stage s ON rs.stage_id = s.stage_id
-  //                 WHERE rs.ms_list_id = '" . intval($msListId) . "'
-  //                 ORDER BY rs.stage_id ASC";
-
-  //       $dbRes = $this->db->Query($query);
-  //       $reviewers = array();
-
-  //       while ($reviewer = $dbRes->Fetch()) {
-  //           $reviewers[] = array(
-  //               'reviewer_id' => intval($reviewer['reviewer_id']),
-  //               'stage_id' => intval($reviewer['stage_id']),
-  //               'require_kpi' => (bool)$reviewer['require_kpi']
-  //           );
-  //       }
-
-  //       return $reviewers;
-  //   }
-
 
   private function GetReviewers($msListId)
   {
@@ -134,11 +129,6 @@ class MsSignupList extends CDBResult
 
   private function CheckKpiExists($msListId, $userId, $stageId)
   {
-    // $query = "SELECT COUNT(*) as count
-    //           FROM " . self::SCHEMA . ".kpi
-    //           WHERE ms_list_id = '" . intval($msListId) . "'
-    //           AND user_id = '" . intval($userId) . "'
-    //           AND stage_id = '" . intval($stageId) . "'";
     $query = "SELECT COUNT(*) as count
               FROM " . self::SCHEMA . ".kpi
               WHERE ms_list_id = '" . intval($msListId) . "'

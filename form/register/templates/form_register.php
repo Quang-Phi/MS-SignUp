@@ -105,7 +105,7 @@
 
             <el-form-item label="Chọn team MS:" prop="team_ms">
                 <el-select
-                    v-model="form.team_ms"
+                    v-model="form.team_ms_id"
                     placeholder="Select">
                     <el-option
                         v-for="value in listTeamMS"
@@ -117,7 +117,7 @@
             </el-form-item>
 
             <el-form-item label="Chọn vai trò MS:" prop="type_ms">
-                <el-select v-model="form.type_ms" placeholder="Select">
+                <el-select v-model="form.type_ms_id" placeholder="Select">
                     <el-option
                         v-for="(value, key) in typeMS"
                         :key="key"
@@ -155,15 +155,15 @@
                 >
                     <div class="dialog-content">
                         <div class="main-commitments">
-                            <p>1. TRUNG THỰC trong giao dịch, đảm bảo tính chính xác của bảng chào giá của công ty Esuhai Group. Nếu có thương lượng thay đổi giá, phải thông qua phê duyệt của Công ty.</p>
-                            <p>2. KHÔNG tiến hành thu thập thông tin liên quan S2Group nếu không được phép tiếp cận;</p>
-                            <p>3. TUYỆT ĐỐI KHÔNG lạm dụng chức vụ, quyền hạn, nhiệm vụ để móc nối môi giới, cò mồi người lao động, các đối tác để nhận tiền, quà, hiện vật, … dưới mọi hình thức, thời gian, địa điểm, ….</p>
-                            <p>4. TUYỆT ĐỐI KHÔNG cung cấp thông tin, dữ liệu liên quan hồ sơ, công việc, tình hình Công ty, khách hàng, đối tác, dự án đang triển khai, bí mật kinh doanh…cho bên thứ ba và/hoặc cơ quan ngôn luận dưới mọi hình thức mà chưa được sự chấp thuận của Ban Giám đốc;</p>
-                            <p>5. KHÔNG ĐƯỢC PHÉP trực tiếp hay gián tiếp tiết lộ hoặc để cho bất kỳ cá nhân hay tổ chức nào khác (kể cả người trong S2Group nếu người đó không được quyền tiếp cận thông tin bảo mật) sử dụng trừ khi điều đó là yêu cầu của công việc và/hoặc có sự đồng ý của cấp trên;</p>
+                            <p>1. <span>TRUNG THỰC</span> trong giao dịch, đảm bảo tính chính xác của bảng chào giá của công ty Esuhai Group. Nếu có thương lượng thay đổi giá, phải thông qua phê duyệt của Công ty.</p>
+                            <p>2. <span>KHÔNG</span> tiến hành thu thập thông tin liên quan S2Group nếu không được phép tiếp cận;</p>
+                            <p>3. <span>TUYỆT ĐỐI KHÔNG</span> lạm dụng chức vụ, quyền hạn, nhiệm vụ để móc nối môi giới, cò mồi người lao động, các đối tác để nhận tiền, quà, hiện vật, … dưới mọi hình thức, thời gian, địa điểm, ….</p>
+                            <p>4. <span>TUYỆT ĐỐI KHÔNG</span> cung cấp thông tin, dữ liệu liên quan hồ sơ, công việc, tình hình Công ty, khách hàng, đối tác, dự án đang triển khai, bí mật kinh doanh…cho bên thứ ba và/hoặc cơ quan ngôn luận dưới mọi hình thức mà chưa được sự chấp thuận của Ban Giám đốc;</p>
+                            <p>5. <span>KHÔNG ĐƯỢC PHÉP</span> trực tiếp hay gián tiếp tiết lộ hoặc để cho bất kỳ cá nhân hay tổ chức nào khác (kể cả người trong S2Group nếu người đó không được quyền tiếp cận thông tin bảo mật) sử dụng trừ khi điều đó là yêu cầu của công việc và/hoặc có sự đồng ý của cấp trên;</p>
                         </div>
 
                         <div class="working-period">
-                            <p>6. Trong thời gian làm việc tại Công ty Esuhai Group tôi cam kết:</p>
+                            <p>6. <span>Trong thời gian làm việc tại Công ty Esuhai Group</span> tôi cam kết:</p>
                             <ul>
                                 <li>Không đồng thời làm việc hay cộng tác dưới bất cứ hình thức nào với tổ chức, cá nhân có quyền lợi đối lập hoặc có khả năng cạnh tranh với Công ty</li>
                                 <li>Không lợi dụng quan hệ giữa Công ty và khách hàng, đối tác của S2Group để thiết lập quan hệ giao dịch với Khách hàng, đối tác vì mục đích cá nhân hoặc vì bất cứ mục đích nào khác mà không được sự chấp thuận của Ban Giám đốc.</li>
@@ -174,7 +174,7 @@
                         </div>
 
                         <div class="responsibility">
-                            <p>TÔI CAM ĐOAN CÓ TRÁCH NHIỆM BỒI THƯỜNG MỌI THIỆT HẠI CHO CÔNG TY, bao gồm không giới hạn những tổn thất về vật chất, uy tín, hình ảnh, chi phí để khắc phục thiệt hại, chi phí kiện tụng, luật sư.</p>
+                            <p><span>TÔI CAM ĐOAN CÓ TRÁCH NHIỆM BỒI THƯỜNG MỌI THIỆT HẠI CHO CÔNG TY</span>, bao gồm không giới hạn những tổn thất về vật chất, uy tín, hình ảnh, chi phí để khắc phục thiệt hại, chi phí kiện tụng, luật sư.</p>
                             <p>Tôi hiểu rằng Công ty Esuhai Group hoàn toàn có thể thực hiện một hoặc đồng thời các biện pháp sau đây:</p>
                             <p>1. Yêu cầu tôi bồi thường thiệt hại do những tổn thất mà S2Group phải gánh chịu do hậu quả của việc tiết lộ thông tin bảo mật của tôi gây ra;</p>
                             <p>2. Khởi kiện tại Tòa án có thẩm quyền theo quy định của pháp luật hiện hành.</p>
@@ -185,9 +185,9 @@
                         <el-checkbox
                             width="500"
                             v-model="form.confirmation"
-                            true-label="Tôi ĐỒNG Ý và CAM KẾT tuân thủ các quy định bảo mật thông tin của công ty"
+                            true-label="Tôi ĐỒNG Ý và CAM KẾT tuân thủ các quy định của công ty"
                             false-label="">
-                            Tôi ĐỒNG Ý và CAM KẾT tuân thủ các quy định bảo mật thông tin của công ty
+                            Tôi đã đọc và ĐỒNG Ý, CAM KẾT tuân thủ các quy định của công ty
                         </el-checkbox>
                     </el-form-item>
 

@@ -15,7 +15,7 @@ try {
         'user_id' => intval($_GET['user_id'])
     ];
 
-    $departments = $msSignupList->GetList($arOrder, $arFilter);
+    $departments = $msSignupList->GetList($arOrder, $arFilter, array());
     http_response_code(200);
     echo json_encode([
         'success' => true,

@@ -9,6 +9,18 @@
   flex: 1 !important;
 }
 
+.el-step:first-child .el-step__head{
+  border-radius: 3px 0 0 3px;
+}
+
+.el-step:last-child .el-step__head{
+  border-radius: 0 3px 3px 0;
+}
+
+.el-step:last-child{
+  border-right: none;
+}
+
 .el-step__head {
   width: 100% !important;
   height: 8px;

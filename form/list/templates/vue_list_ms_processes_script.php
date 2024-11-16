@@ -29,74 +29,9 @@
       const pageSize = ref(50);
       const total = ref(0);
       const searchQuery = ref('');
-      const form = ref({
-        stage: '',
-        user_name: '',
-        team_ms: '',
-        kpi: ''
-      });
+      const form = ref({});
 
-      const updateTabeData = (data) => {
-        const start = (currentPage.value - 1) * pageSize.value;
-        const end = start + pageSize.value;
-        tableData.value = data.slice(start, end);
-      };
-
-      const filteredData = () => {
-        if (!searchQuery.value) return allData.value;
-
-        const removeAccents = (str) => {
-          return str
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase();
-        };
-
-        const formatDateForSearch = (dateStr) => {
-          if (!dateStr) return '';
-          if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
-            return parts.join('/');
-          }
-          const date = new Date(dateStr);
-          if (isNaN(date.getTime())) return dateStr;
-
-          const day = date.getDate();
-          const month = date.getMonth() + 1;
-          const year = date.getFullYear();
-
-          return `${day}/${month}/${year}`;
-        };
-
-        const search = removeAccents(searchQuery.value);
-
-        return allData.value.filter(row => {
-          const formattedDate = formatDateForSearch(row.created_at);
-
-          return removeAccents(row.id?.toString() || '').toLowerCase().indexOf(search) > -1 ||
-            removeAccents(row.user_name || '').toLowerCase().indexOf(search) > -1 ||
-            removeAccents(formattedDate || '').toLowerCase().indexOf(search) > -1 ||
-            removeAccents(row.user_email || '').toLowerCase().indexOf(search) > -1 ||
-            removeAccents(row.employee_id || '').toLowerCase().indexOf(search) > -1 ||
-            removeAccents(row.team_ms || '').toLowerCase().indexOf(search) > -1;
-        });
-      };
-
-      const updateFilteredData = () => {
-        const filtered = filteredData();
-        total.value = filtered.length;
-        updateTabeData(filtered);
-      };
-
-      const handlePageChange = (page) => {
-        currentPage.value = page;
-        updateFilteredData();
-      };
-
-      const handleSearch = () => {
-        currentPage.value = 1;
-        updateFilteredData();
-      };
+      const handleSearch = () => {};
 
       const handleApprove = async (row) => {
         try {
@@ -105,6 +40,12 @@
             id: row.id,
             stage_id: row.stage_id,
             user_name: row.user_name,
+            user_email: row.user_email,
+            employee_id: row.employee_id,
+            department: row.department,
+            type_ms: row.type_ms,
+            team_ms: row.team_ms,
+            propose: row.propose,
           };
 
           const response = await axios.post('../../api/approve_ms_register.php', params);
@@ -173,6 +114,11 @@
                 id: row.id,
                 stage_id: row.stage_id,
                 user_name: row.user_name,
+                user_email: row.user_email,
+                employee_id: row.employee_id,
+                department: row.department,
+                type_ms: row.type_ms,
+                team_ms: row.team_ms,
                 comments: value,
                 reviewer: row.reviewers.find(reviewer => reviewer.stage_id.toString() === row.stage_id)?.stage_label
               });
@@ -258,13 +204,20 @@
           ms_list_id: rowData.id,
           user_id: rowData.user_id,
           user_name: rowData.user_name,
+          user_email: rowData.user_email,
+          employee_id: rowData.employee_id,
+          department: rowData.department,
+          type_ms: rowData.type_ms,
+          type_ms_id: rowData.type_ms_id,
+          propose: rowData.propose,
           team_ms: rowData.team_ms,
           team_ms_id: rowData.team_ms_id,
           has_kpi: hasKpi,
           reviewers: rowData.reviewers,
+          agree_kpi: false,
+          received_all: false,
           kpi: ''
         };
-        console.log(form.value);
 
         if (hasKpi) {
           tableDataKpi.value = [];
@@ -277,6 +230,13 @@
           flag.value = true;
         }
       }
+
+      const isFormValid = computed(() => {
+        if (Array.isArray(form.list_propose) && form.list_propose[0] !== '') {
+          return form.value.agree_kpi && form.value.received_all;
+        }
+        return form.value.agree_kpi;
+      });
 
       const getTableDataKpi = async (ms_list_id, user_id, stage_id) => {
         await getUserKpi(ms_list_id, user_id, stage_id);
@@ -324,6 +284,9 @@
               });
 
             });
+            tableDataKpi.value.forEach(element => {
+              createdProgram.value.push(element.program);
+            });
           } else {
             console.error('API Error:', data.message);
             tableDataKpi.value = [];
@@ -334,46 +297,51 @@
         }
       }
 
-      // const getMsSignupList = async () => {
-      //   try {
-      //     const response = await axios.get(`../../api/get_ms_signup_list.php`);
-      //     const data = response.data;
-      //     data.data.forEach(element => {
-      //       element.list_propose = JSON.parse(element.list_propose).join(', ');
-      //     });
-      //     if (data.success && data.data) {
-      //       tableData.value = data.data;
-
-      //     } else {
-      //       console.error('API Error:', data.message);
-      //       tableData.value = {};
-      //     }
-      //   } catch (error) {
-      //     console.error('Error fetching list MS:', error);
-      //     tableData.value = {};
-      //   }
-      // }
-
-      const getMsSignupList = async () => {
+      const getMsSignupList = async (offset = 0) => {
         try {
-          const response = await axios.get(`../../api/get_ms_signup_list.php`);
+          const response = await axios.get(`../../api/get_ms_signup_list.php`, {
+            params: {
+              limit: pageSize.value,
+              offset: offset
+            }
+          });
           const data = response.data;
           data.data.forEach(element => {
-            element.list_propose = JSON.parse(element.list_propose).join(', ');
+            if (element.list_propose) {
+              element.list_propose = JSON.parse(element.list_propose).join(', ');
+            }
             element.created_at = new Date(element.created_at).toLocaleDateString('vi-VN');
           });
           if (data.success && data.data) {
             tableData.value = data.data;
-            total.value = data.data.length;
+            total.value = data.total;
           } else {
             console.error('API Error:', data.message);
             tableData.value = [];
           }
         } catch (error) {
-          console.error('Error fetching list MS:', error);
+          console.error('Error fetching:', error);
           tableData.value = [];
         }
       };
+
+      const handlePageChange = async (page) => {
+        currentPage.value = page;
+        await getMsSignupList((page - 1) * pageSize.value);
+      };
+
+      const pagination = computed(() => {
+        const pages = Math.ceil(total.value / 50);
+        const currentPage = currentPage.value;
+        const pagination = [];
+        for (let i = 1; i <= pages; i++) {
+          pagination.push({
+            page: i,
+            active: i === currentPage
+          });
+        }
+        return pagination;
+      });
 
       const handleInputChange = (index, month, value) => {
         isEdit.value = true;
@@ -383,9 +351,7 @@
       const handleCreateKpi = async ($flag = true) => {
         try {
           loading.value = $flag;
-          form.value.kpi = tableDataKpi.value.map(element => ({
-            ...element
-          }));
+          form.value.kpi = tableDataKpi.value;
           const response = await axios.post(`../../api/create_kpi.php`, form.value);
           if (response.data.success) {
             ElementPlus.ElMessage({
@@ -438,18 +404,30 @@
         return true;
       };
 
+      const finalSubmit = async () => {
+        try {
+          const response = await axios.post('../../api/final_confirm.php', form.value);
+
+        } catch (error) {
+
+        }
+      }
       onMounted(async () => {
         await getMsSignupList();
         allData.value = tableData.value;
-        updateFilteredData();
       });
 
       const submitForm = async ($type) => {
         $data = {
           id: form.value.ms_list_id,
           stage_id: form.value.stage_id,
-          // name: form.value.name,
-          // department: form.value.department
+          user_name: form.value.user_name,
+          user_email: form.value.user_email,
+          employee_id: form.value.employee_id,
+          department: form.value.department,
+          type_ms: form.value.type_ms,
+          team_ms: form.value.team_ms,
+          propose: form.value.propose,
         };
         const flag = validateTableKpiData();
         if (flag !== true) {
@@ -509,7 +487,9 @@
         total,
         handlePageChange,
         handleSearch,
-        searchQuery
+        searchQuery,
+        isFormValid,
+        finalSubmit
       }
     }
   });

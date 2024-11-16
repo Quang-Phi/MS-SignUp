@@ -29,8 +29,8 @@ try {
     'status' => $formData['status'],
     //'status' => "success",
     'department_id' => $formData['department_id'],
-    'team_ms_id' => intval($formData['team_ms']),
-    'type_ms_id' => intval($formData['type_ms']),
+    'team_ms_id' => intval($formData['team_ms_id']),
+    'type_ms_id' => intval($formData['type_ms_id']),
     'list_propose' => $formData['list_propose'],
     'confirmation' => $formData['confirmation'],
     'comments' => ''
@@ -73,8 +73,13 @@ try {
   }
 
   $requestData = [
-    'id' => $res,
-    'user_name' => $formData['user_name']
+    "user_name" => $formData["user_name"],
+    "user_email" => $formData["user_email"],
+    "employee_id" => $formData["employee_id"],
+    "department" => $formData["department"],
+    "type_ms" => $formData["type_ms"],
+    "team_ms" => $formData["team_ms"],
+    "propose" => json_decode($formData["list_propose"]),
   ];
 
   $mailService = new MailService();

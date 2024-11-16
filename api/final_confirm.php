@@ -13,9 +13,10 @@ try {
 
     $jsonData = file_get_contents("php://input");
     $post = json_decode($jsonData, true);
-
+    echo var_export($post, true);
+    
     if (isset($post["id"])) {
-        $currentData = $msSignupList->GetById($post["id"]);
+        $currentData = $msSignupList->GetById($post["ms_list_id"]);
         if (
             ($currentData && $currentData["stage_id"] !== $post["stage_id"]) ||
             $currentData["status"] !== "pending"
@@ -31,54 +32,11 @@ try {
         }
     }
 
-    $nextStageId = intval($post["stage_id"]) + 1;
     $arFields = [
-        "stage_id" => $nextStageId,
+        "status" => "success",
     ];
 
-    $arrFields2 = [
-        "ms_list_id" => $post["id"],
-        "stage_id" => $nextStageId,
-    ];
-
-    $res = $msSignupList->Update($post["id"], $arFields);
-    if ($res) {
-        $list = $reviewerStage->GetList([], $arrFields2);
-
-        $requestData = [
-            "id" => $post["id"],
-            "user_name" => $post["user_name"],
-            "user_email" => $post["user_email"],
-            "employee_id" => $post["employee_id"],
-            "department" => $post["department"],
-            "type_ms" => $post["type_ms"],
-            "team_ms" => $post["team_ms"],
-            "propose" => $post["propose"],
-        ];
-
-        $reviewerIds = array_map(function ($reviewer) {
-            return $reviewer["reviewer_id"];
-        }, $list);
-
-        $mailService = new MailService();
-
-        if (!empty($reviewerIds)) {
-            try {
-                $mailResult = $mailService->sendRequestNotification(
-                    "request_review",
-                    $reviewerIds,
-                    $requestData
-                );
-                error_log(
-                    "Email notification result: " . json_encode($mailResult)
-                );
-            } catch (Exception $e) {
-                error_log(
-                    "Failed to send email notifications: " . $e->getMessage()
-                );
-            }
-        }
-    }
+    $res = $msSignupList->Update($post["ms_list_id"], $arFields);
 
     http_response_code(200);
     echo json_encode([

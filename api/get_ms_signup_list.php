@@ -8,42 +8,41 @@ header('Access-Control-Allow-Methods: GET');
 try {
     $msSignupList = new MsSignupList();
 
-    $arFilter = $_GET['filter'] ?? null;
-    $list = $msSignupList->GetList(array(), $arFilter);
+    $arOptions = [
+        'limit' => $_GET['limit'],
+        'offset' => $_GET['offset']
+    ];
+
+    $result = $msSignupList->GetList(array(), $arFilter, $arOptions);
+    $list = $result['items'];
+
     foreach ($list as $key => $value) {
         $teamMsId = $value['team_ms_id'];
-
         $res = CIBlockSection::GetList(array(), array("ID" => $teamMsId));
-        $typeMSLabel = '';
-
         while ($ar = $res->Fetch()) {
             $list[$key]['team_ms'] = $ar["NAME"];
         }
 
-        // $msId = $value['department_id'];
-        // $enumList = CUserFieldEnum::GetList(array(), array('ID' => $msId));
-        // $typeMSLabel = '';
-
-        // while ($enum = $enumList->Fetch()) {
-        //     if ($enum['ID'] == $msId) {
-        //         $list[$key]['department'] = $enum['VALUE'];
-        //         break;
-        //     }
-        // }
-
         $rsDepartments = CIBlockSection::GetList(array(), array("ID" => json_decode($value['department_id'], true)));
         $departmentLabels = [];
-
         while ($arDepartment = $rsDepartments->Fetch()) {
             $departmentLabels[] = $arDepartment["NAME"];
         }
         $list[$key]['department'] = implode(', ', $departmentLabels);
+
+        $enumList = CUserFieldEnum::GetList(array(), array('USER_FIELD_ID' => 966));
+        $typeMS = array();
+        while ($enum = $enumList->Fetch()) {
+            $typeMS[$enum['ID']] = $enum['VALUE'];
+        }
+        $list[$key]['type_ms'] = $typeMS[$value['type_ms_id']];
     }
 
     http_response_code(200);
     echo json_encode([
         'success' => true,
         'data' => $list,
+        'total' => $result['total'],
         'timestamp' => time()
     ]);
 } catch (ApiException $e) {
@@ -61,4 +60,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-`

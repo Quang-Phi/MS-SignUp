@@ -33,10 +33,11 @@
                 user_email: userEmail,
                 employee_id: 1,
                 manager: null,
-                team_ms: null,
-                type_ms: null,
+                team_ms_id: null,
+                type_ms_id: null,
                 list_propose: null,
                 status: 'pending',
+                department: dpmString,
                 department_id: departmentId,
                 confirmation: false,
                 msl_id: null,
@@ -52,12 +53,12 @@
             ])
 
             const rules = {
-                team_ms: [{
+                team_ms_id: [{
                     required: true,
                     message: 'Vui lòng chọn Team MS',
                     trigger: 'change'
                 }],
-                type_ms: [{
+                type_ms_id: [{
                     required: true,
                     message: 'Vui lòng chọn vai trò MS',
                     trigger: 'change'
@@ -215,7 +216,8 @@
                     return;
                 }
                 const response = await getFormSubmited(userId);
-                if (response[0] && response[0].status === "pending") {
+                
+                if (response.items[0] && response.items[0].status === "pending") {
                     showForm.value = 2;
                     return;
                 }
@@ -243,14 +245,22 @@
                     }
                     try {
                         loading.value = true;
-                        const headMS = await getHeadDepartment(form.value.team_ms, 'departmentId');
+                        const headMS = await getHeadDepartment(form.value.team_ms_id, 'departmentId');
                         const headMSA = await getHeadDepartment(MSAid, 'departmentId');
                         form.value.msl_id = headMS.id;
                         form.value.msa_id = headMSA.id;
+                        form.value.type_ms = typeMS[form.value.type_ms_id];
+                        listTeamMS.value.forEach(element => {
+                            if (element.ID === form.value.team_ms_id) {
+                                form.value.team_ms = element.NAME;
+                                return;
+                            }
+                        });
                         form.value.department_id = JSON.stringify(form.value.department_id);
                         form.value.list_propose = JSON.stringify(form.value.list_propose);
+                        console.log(form.value);
                         //const response = await axios.post(`./register_wf.php`, formData);
-                        
+
                         const response = await axios.post(`../../api/create_ms_regiser.php`, form.value);
                         const data = response.data;
                         if (data.success) {

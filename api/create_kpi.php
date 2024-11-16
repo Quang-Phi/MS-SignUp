@@ -19,14 +19,13 @@ try {
         'user_id' => $formData['user_id'],
         'stage_id' => $formData['stage_id'],
         'ms_list_id' => $formData['ms_list_id'],
-        'kpi' => json_encode($formData['kpi'])
+        'kpi' => json_encode($formData['kpi'], JSON_UNESCAPED_UNICODE)
     ];
 
     $result = $kpi->GetList(array(), $arFilter);
     $res = null;
     if (count($result) > 0) {
         $res = $kpi->Update($result[0]['id'], $data);
-        return $result[0]['id'];
     } else {
         $res = $kpi->Add($data);
     }

@@ -85,9 +85,9 @@ class MailService
     private function getSubjectByType($type, $requestData)
     {
         $subjects = [
-            'request_review' => "[MS-{$requestData['id']}] Thông báo yêu cầu xét duyệt mới từ {$requestData['name']}",
-            'request_approved' => "[MS-{$requestData['id']}] Thông báo yêu cầu đã được phê duyệt",
-            'request_rejected' => "[MS-{$requestData['id']}] Thông báo yêu cầu đã bị từ chối",
+            'request_review' => "Thông báo yêu cầu xét duyệt mới từ {$requestData['name']}",
+            'request_approved' => "Thông báo yêu cầu đã được phê duyệt",
+            'request_rejected' => "Thông báo yêu cầu đã bị từ chối",
         ];
 
         return isset($subjects[$type]) ? $subjects[$type] : $subjects['request_review'];

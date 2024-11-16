@@ -209,3 +209,9 @@
 .el-dialog .el-checkbox {
     align-items: baseline !important;
 }
+
+.main-commitments span,
+.working-period span,
+.responsibility span{
+color: #f56c6c;
+}
