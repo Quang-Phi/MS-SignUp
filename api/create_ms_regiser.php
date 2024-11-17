@@ -82,7 +82,7 @@ try {
     "propose" => json_decode($formData["list_propose"]),
   ];
 
-  $mailService = new MailService();
+  $mailService = new MailService($config);
 
   $currentReviewerIds = array_map(function ($reviewer) use ($stageId) {
     if ($reviewer['stage_id'] == $stageId) {

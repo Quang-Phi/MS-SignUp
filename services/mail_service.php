@@ -8,33 +8,40 @@ class MailService
 {
     private $config;
     private $emailTemplates;
+    private $env;
 
-    public function __construct()
+    public function __construct($env)
     {
         $this->config = [
             'from_email' => 'dac2023@esuhai.com',
             'from_name' => 'Phi',
-            'app_url' => 'https://bitrixdev.esuhai.org'
+            'app_url' => $env['base_url']
         ];
 
-        $this->emailTemplates = new EmailTemplates($this->config['app_url']);
+        $this->env = $env;
+
+        $this->emailTemplates = new EmailTemplates( $this->env, $this->config['app_url']);
     }
 
-    public function sendRequestNotification($type = 'request_review', $reviewerIds, $requestData)
+    public function sendRequestNotification($type = 'request_review', $reviewers, $requestData)
     {
         try {
-            if (!is_array($reviewerIds)) {
-                $reviewerIds = [$reviewerIds];
+            if (!is_array($reviewers)) {
+                $reviewers = [$reviewers];
             }
 
             $successCount = 0;
             $errors = [];
 
-            foreach ($reviewerIds as $reviewerId) {
+            foreach ($reviewers as $reviewer) {
                 try {
-                    $to = $this->getReviewerEmail($reviewerId);
-                    if (!$to) {
-                        throw new Exception("Email not found for reviewer " . $reviewerId);
+                    if (is_numeric($reviewer)) {
+                        $to = $this->getReviewerEmail($reviewer);
+                        if (!$to) {
+                            throw new Exception("Email not found for reviewer " . $reviewer);
+                        }
+                    } else {
+                        $to = $reviewer;
                     }
 
                     $subject = $this->getSubjectByType($type, $requestData);
@@ -62,7 +69,7 @@ class MailService
                         throw new Exception("Failed to send email to " . $to);
                     }
                 } catch (Exception $e) {
-                    $errors[] = "Error sending to reviewer {$reviewerId}: " . $e->getMessage();
+                    $errors[] = "Error sending to reviewer {$reviewer}: " . $e->getMessage();
                 }
             }
 
@@ -72,9 +79,9 @@ class MailService
 
             return [
                 'success' => true,
-                'total' => count($reviewerIds),
+                'total' => count($reviewers),
                 'sent' => $successCount,
-                'failed' => count($reviewerIds) - $successCount,
+                'failed' => count($reviewers) - $successCount,
                 'errors' => $errors
             ];
         } catch (Exception $e) {
@@ -93,9 +100,9 @@ class MailService
         return isset($subjects[$type]) ? $subjects[$type] : $subjects['request_review'];
     }
 
-    private function getReviewerEmail($reviewerId)
+    private function getReviewerEmail($reviewer)
     {
-        $user = CUser::GetByID($reviewerId)->Fetch();
+        $user = CUser::GetByID($reviewer)->Fetch();
         return $user["EMAIL"];
     }
 }

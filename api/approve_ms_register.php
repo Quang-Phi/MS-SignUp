@@ -2,6 +2,7 @@
 require $_SERVER["DOCUMENT_ROOT"] . "/ms-signup/services/mail_service.php";
 require $_SERVER["DOCUMENT_ROOT"] . "/ms-signup/model/ms_signup_list.php";
 require $_SERVER["DOCUMENT_ROOT"] . "/ms-signup/model/reviewer_stage.php";
+require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/env.php';
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
@@ -60,7 +61,7 @@ try {
             return $reviewer["reviewer_id"];
         }, $list);
 
-        $mailService = new MailService();
+        $mailService = new MailService($config);
 
         if (!empty($reviewerIds)) {
             try {

@@ -10,7 +10,8 @@ try {
 
     $arOptions = [
         'limit' => $_GET['limit'],
-        'offset' => $_GET['offset']
+        'offset' => $_GET['offset'],
+        'search' => $_GET['searchQuery'],
     ];
 
     $result = $msSignupList->GetList(array(), $arFilter, $arOptions);

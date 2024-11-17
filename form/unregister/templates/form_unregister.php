@@ -4,7 +4,7 @@
     :closable="false"
     show-icon>
     <template #title>
-      Bạn chưa là MS, không thể hủy đăng ký hoặc chuyển team. Nếu bạn muốn đăng ký làm MS, vui lòng <a href='https://bitrixdev.esuhai.org/ms-signup/form/register/' target='_blank'>click vào đây</a>
+      Bạn chưa là MS, không thể hủy đăng ký hoặc chuyển team. Nếu bạn muốn đăng ký làm MS, vui lòng <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/register/'?>" target='_blank'>click vào đây</a>
     </template>
   </el-alert>
 </div>

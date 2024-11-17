@@ -21,10 +21,12 @@ class MsSignupList extends CDBResult
   public function GetList($arOrder = array(), $arFilter = array(), $arOptions = array())
   {
     global $USER;
-    $userID = $USER->GetID();
+    $userID = intval($USER->GetID());
     $admin = $USER->IsAdmin();
 
-    // Base query
+    $searchQuery = isset($arOptions['search']) ? trim($arOptions['search']) : '';
+    $searchQuery = $this->db->ForSQL($searchQuery);
+
     if ($admin) {
       $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl";
     } else {
@@ -37,61 +39,152 @@ class MsSignupList extends CDBResult
                      AND r.stage_id = msl.stage_id";
     }
 
-    // Add filters
+    $whereParts = array();
+
     if (!empty($arFilter)) {
-      if (!$admin) {
-        $baseQuery = "SELECT * FROM ($baseQuery) as filtered_msl WHERE ";
-      } else {
-        $baseQuery .= " WHERE ";
-      }
-
-      $whereClauses = array();
+      $tableAlias = !$admin ? 'filtered_msl' : 'msl';
       foreach ($arFilter as $field => $value) {
-        $whereClauses[] = "$field = '$value'";
+        if ($value !== null && $value !== '') {
+          $value = $this->db->ForSQL($value);
+          $whereParts[] = "$tableAlias.$field = '$value'";
+        }
       }
-      $baseQuery .= implode(' AND ', $whereClauses);
     }
 
-    // Get total count before adding ORDER BY, LIMIT and OFFSET
-    $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
-    $totalRes = $this->db->Query($totalQuery);
-    $total = $totalRes->Fetch();
+    if (!empty($searchQuery)) {
+      $tableAlias = !$admin ? 'filtered_msl' : 'msl';
 
-    // Add ORDER BY
-    if (!empty($arOrder)) {
-      $baseQuery .= " ORDER BY ";
-      if (!$admin && !empty($arFilter)) {
-        foreach ($arOrder as $field => $direction) {
-          $baseQuery .= "$field $direction, ";
+      $formattedDate = $this->formatSearchDate($searchQuery);
+
+      $searchConditions = [
+        "$tableAlias.user_name LIKE '%$searchQuery%'",
+        "$tableAlias.user_email LIKE '%$searchQuery%'",
+        "$tableAlias.employee_id LIKE '%$searchQuery%'",
+        "$tableAlias.id LIKE '%$searchQuery%'"
+      ];
+
+      if ($formattedDate) {
+        switch ($formattedDate['type']) {
+          case 'day':
+            $searchConditions[] = "DAY($tableAlias.created_at) = '{$formattedDate['value']}'";
+            break;
+          case 'day_month':
+            $searchConditions[] = "(MONTH($tableAlias.created_at) = '{$formattedDate['value']['month']}' 
+                                         AND DAY($tableAlias.created_at) = '{$formattedDate['value']['day']}')";
+            break;
+          case 'full':
+            $searchConditions[] = "DATE($tableAlias.created_at) = '{$formattedDate['value']}'";
+            break;
         }
+      }
+
+      $whereParts[] = "(" . implode(" OR ", $searchConditions) . ")";
+    }
+
+    if (!empty($whereParts)) {
+      if (!$admin) {
+        $baseQuery = "SELECT * FROM ($baseQuery) as filtered_msl WHERE " . implode(" AND ", $whereParts);
       } else {
-        foreach ($arOrder as $field => $direction) {
-          $baseQuery .= "msl.$field $direction, ";
+        $baseQuery .= " WHERE " . implode(" AND ", $whereParts);
+      }
+    }
+
+    $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
+    try {
+      $totalRes = $this->db->Query($totalQuery);
+      $total = $totalRes->Fetch();
+    } catch (Exception $e) {
+      error_log("Error in total count query: " . $e->getMessage());
+      return false;
+    }
+
+    if (!empty($arOrder)) {
+      $tableAlias = (!$admin && !empty($whereParts)) ? 'filtered_msl' : 'msl';
+      $orderParts = array();
+      foreach ($arOrder as $field => $direction) {
+        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $orderParts[] = "$tableAlias.$field $direction";
+      }
+      $baseQuery .= " ORDER BY " . implode(", ", $orderParts);
+    }
+
+    if (!empty($arOptions['limit'])) {
+      $limit = intval($arOptions['limit']);
+      $baseQuery .= " LIMIT $limit";
+
+      if (!empty($arOptions['offset'])) {
+        $offset = intval($arOptions['offset']);
+        $baseQuery .= " OFFSET $offset";
+      }
+    }
+
+    try {
+      $dbRes = $this->db->Query($baseQuery);
+      $arResult = array();
+      while ($arRes = $dbRes->Fetch()) {
+        $arRes['reviewers'] = $this->GetReviewers($arRes['id']);
+        $arResult[] = $arRes;
+      }
+
+      return array(
+        'items' => $arResult,
+        'total' => intval($total['total'])
+      );
+    } catch (Exception $e) {
+      error_log("Error in final query: " . $e->getMessage());
+      return false;
+    }
+  }
+
+  private function formatSearchDate($date)
+  {
+    $date = trim($date);
+    $currentDate = new DateTime();
+    $currentYear = $currentDate->format('Y');
+    $currentMonth = $currentDate->format('m');
+
+    if (preg_match('/^(\d{1,2})$/', $date, $matches)) {
+      $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+      if ($day >= 1 && $day <= 31) {
+        return [
+          "type" => "day",
+          "value" => $day
+        ];
+      }
+    }
+
+    if (preg_match('/^(\d{1,2})\/?(\d{1,2})?\/?(\d{4})?$/', $date, $matches)) {
+      $day = isset($matches[1]) ? str_pad($matches[1], 2, '0', STR_PAD_LEFT) : null;
+      $month = isset($matches[2]) ? str_pad($matches[2], 2, '0', STR_PAD_LEFT) : $currentMonth;
+      $year = isset($matches[3]) ? $matches[3] : $currentYear;
+
+      if ($day && !isset($matches[2])) {
+        return [
+          "type" => "day",
+          "value" => $day
+        ];
+      }
+
+      if ($day && $month && !isset($matches[3])) {
+        if ($month >= 1 && $month <= 12 && $day >= 1 && $day <= 31) {
+          return [
+            "type" => "day_month",
+            "value" => ["month" => $month, "day" => $day]
+          ];
         }
       }
-      $baseQuery = rtrim($baseQuery, ', ');
+
+      if ($day && $month && $year) {
+        if (checkdate($month, $day, $year)) {
+          return [
+            "type" => "full",
+            "value" => "$year-$month-$day"
+          ];
+        }
+      }
     }
 
-    // Add LIMIT and OFFSET
-    if (!empty($arOptions['limit'])) {
-      $baseQuery .= " LIMIT " . intval($arOptions['limit']);
-    }
-    if (!empty($arOptions['offset'])) {
-      $baseQuery .= " OFFSET " . intval($arOptions['offset']);
-    }
-
-    // Execute final query
-    $dbRes = $this->db->Query($baseQuery);
-    $arResult = array();
-    while ($arRes = $dbRes->Fetch()) {
-      $arRes['reviewers'] = $this->GetReviewers($arRes['id']);
-      $arResult[] = $arRes;
-    }
-
-    return array(
-      'items' => $arResult,
-      'total' => intval($total['total'])
-    );
+    return false;
   }
 
   private function GetReviewers($msListId)

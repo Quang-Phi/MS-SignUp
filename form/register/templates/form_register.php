@@ -4,7 +4,7 @@
         :closable="false"
         show-icon>
         <template #title>
-            Bạn đã là MS, không thể đăng ký lại. Nếu bạn muốn hủy đăng ký hoặc chuyển team, vui lòng <a href='https://bitrixdev.esuhai.org/ms-signup/form/unregister/' target='_blank'>click vào đây</a>
+            Bạn đã là MS, không thể đăng ký lại. Nếu bạn muốn hủy đăng ký hoặc chuyển team, vui lòng <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/unregister/'?>" target='_blank'>click vào đây</a>
         </template>
     </el-alert>
 </div>
@@ -14,7 +14,7 @@
         :closable="false"
         show-icon>
         <template #title>
-            Yêu cầu đăng ký làm MS của bạn đang được xét duyệt. Xin vui lòng đợi hoặc <a href='https://bitrixdev.esuhai.org/ms-signup/form/list/' target='_blank'>click vào đây để theo dõi.</a>
+            Yêu cầu đăng ký làm MS của bạn đang được xét duyệt. Xin vui lòng đợi hoặc <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/list/'?>" target='_blank'>click vào đây để theo dõi.</a>
         </template>
     </el-alert>
 </div>

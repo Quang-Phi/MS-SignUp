@@ -2,23 +2,44 @@
 class EmailTemplates
 {
     private $appUrl;
+    private $env;
 
-    public function __construct($appUrl)
+    public function __construct($env, $appUrl)
     {
         $this->appUrl = $appUrl;
+        $this->env = $env;
     }
+
+    // public function getTemplate($type, $requestData)
+    // {
+    //     switch ($type) {
+    //         case 'request_review':
+    //             return $this->getRequestReviewTemplate($requestData);
+    //         case 'approval':
+    //             return $this->getApprovalTemplate($requestData);
+    //         case 'rejection':
+    //             return $this->getRejectionTemplate($requestData);
+    //         default:
+    //             throw new Exception("Unknown email template type: " . $type);
+    //     }
+    // }
 
     public function getTemplate($type, $requestData)
     {
-        switch ($type) {
-            case 'request_review':
-                return $this->getRequestReviewTemplate($requestData);
-            case 'approval':
-                return $this->getApprovalTemplate($requestData);
-            case 'rejection':
-                return $this->getRejectionTemplate($requestData);
-            default:
-                throw new Exception("Unknown email template type: " . $type);
+        $templateMap = [
+            'request_review' => 'getRequestReviewTemplate',
+            'approval' => 'getApprovalTemplate',
+            'rejection' => 'getRejectionTemplate',
+        ];
+    
+        foreach ($this->env['send_mail_to'] as $key => $item) {
+            $templateMap[$key] = 'get' . ucfirst(str_replace('_', '', $key)) . 'Template';
+        }
+    
+        if (isset($templateMap[$type])) {
+            return $this->{$templateMap[$type]}($requestData);
+        } else {
+            throw new Exception("Unknown email template type: " . $type);
         }
     }
 
@@ -81,7 +102,7 @@ class EmailTemplates
 
     private function getApprovalTemplate($requestData)
     {
-        return "";
+        return "<h2>Thông báo phê duyệt</h2>";
     }
 
     private function getRejectionTemplate($requestData)
@@ -127,5 +148,33 @@ class EmailTemplates
        ";
 
         return $template . $footer;
+    }
+
+    private function getControlboardTemplate($requestData){
+        return "<h2>Thông báo controlboard</h2>";
+    }
+
+    private function getIctTemplate($requestData){
+        return "<h2>Thông báo ict</h2>";
+    }
+
+    private function getHrTemplate($requestData){
+        return "<h2>Thông báo hr</h2>";
+    }
+
+    private function getMslTemplate($requestData){
+        return "<h2>Thông báo msl</h2>";
+    }
+
+    private function getMsaTemplate($requestData){
+        return "<h2>Thông báo msa</h2>";
+    }
+
+    private function getLeaderTemplate($requestData){
+        return "<h2>Thông báo leader</h2>";
+    }
+
+    private function getBodTemplate($requestData){
+        return "<h2>Thông báo bod</h2>";
     }
 }

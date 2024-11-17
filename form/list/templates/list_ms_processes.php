@@ -1,14 +1,14 @@
 <div class="title">
     <h1 style="font-size:25px;margin:10px 0;" class="title-page">Danh sách chờ xét duyệt</h1>
 </div>
-<div :class="showFormKPI ? 'overlay active' : 'overlay'" @click="showFormKPI = false"></div>
+<div :class="showFormKPI ? 'overlay active' : 'overlay'" @click="hideOverlay()"></div>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <div>
         <span>TỔNG:</span>
         <span style="font-weight: bold; margin-left: 4px">{{ total }}</span>
     </div>
 
-    <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="handleSearch" />
+    <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch" />
 </div>
 <div class="list-ms-processes">
     <el-table
@@ -16,15 +16,15 @@
         :default-sort="{prop: 'id', order: 'descending'}"
         style="width: 100%"
         border default-expand-all>
-        <el-table-column prop="id" sortable label="ID" min-width="70"></el-table-column>
-        <el-table-column prop="user_name" sortable label="Họ và tên" min-width="150">
+        <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
+        <el-table-column prop="user_name" label="Họ và tên" min-width="150">
             <template #default="scope">
                 <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
                     {{ scope.row.user_name }}
                 </a>
             </template>
         </el-table-column>
-        <el-table-column prop="stage_id" sortable label="Trạng thái" min-width="200">
+        <el-table-column prop="stage_id" label="Trạng thái" min-width="200">
             <template #default="scope">
                 <el-steps
                     :active="scope.row.status === 'error' ? scope.row.stage_id : scope.row.stage_id === scope.row.max_stage && scope.row.status === 'success' ? scope.row.stage_id : scope.row.stage_id - 1"
@@ -43,11 +43,11 @@
                 </el-steps>
             </template>
         </el-table-column>
-        <el-table-column prop="created_at" sortable label="Ngày đăng ký" min-width="200"></el-table-column>
-        <el-table-column prop="user_email" sortable label="Email" min-width="150"></el-table-column>
-        <el-table-column prop="employee_id" sortable label="Mã nhân viên" min-width="140"></el-table-column>
+        <el-table-column prop="created_at" label="Ngày đăng ký" min-width="200"></el-table-column>
+        <el-table-column prop="user_email" label="Email" min-width="150"></el-table-column>
+        <el-table-column prop="employee_id" label="Mã nhân viên" min-width="140"></el-table-column>
         <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
-        <el-table-column prop="team_ms" sortable label="Team MS" min-width="150"></el-table-column>
+        <el-table-column prop="team_ms" label="Team MS" min-width="150"></el-table-column>
         <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
         <el-table-column prop="confirmation" label="Xác nhận và cam kết" min-width="300"></el-table-column>
         <el-table-column fixed="right" label="Hành động" min-width="150">
@@ -141,7 +141,7 @@
 <div :class="showFormKPI ? 'form-kpi active' : 'form-kpi'">
     <div class="side-panel-labels">
         <div class="side-panel-label" style="max-width: 215px;">
-            <div class="side-panel-label-icon-box" title="Close" @click="showFormKPI = false">
+            <div class="side-panel-label-icon-box" title="Close" @click="hideOverlay()">
                 <div class="side-panel-label-icon side-panel-label-icon-close"></div>
             </div><span class="side-panel-label-text"></span>
         </div>
@@ -223,13 +223,13 @@
         </div>
 
         <div class="user_confirm" v-if="form.max_stage === form.stage_id">
-            <div style="margin: 20px 0;">
+            <div style="margin-top: 20px;">
                 <el-checkbox v-model="form.agree_kpi">
                     Tôi đồng ý với các KPI được phân công ở bảng trên
                 </el-checkbox>
             </div>
 
-            <div style="margin: 20px 0;" v-if="form.list_propose && form.list_propose.length > 0 && form.list_propose[0].trim() !== ''">
+            <div v-if="form.list_propose && form.list_propose.length > 0 && form.list_propose[0].trim() !== ''">
                 <el-checkbox v-model="form.received_all">
                     Tôi đã nhận đủ các phần yêu cầu sau:
                 </el-checkbox>

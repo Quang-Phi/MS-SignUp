@@ -1,13 +1,13 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php";
-
 class ApiService
 {
-    private $baseUrl = 'https://bitrixdev.esuhai.org/rest/544/3bm30pypmym3jou1';
+    private $webhook_url;
     private $token;
 
-    public function __construct()
+    public function __construct($env)
     {
+        $this->webhook_url = $env["webhook_url"];
         // Khởi tạo cache nếu cần
         // $this->cache = new Cache();
     }
@@ -135,7 +135,7 @@ class ApiService
     {
         try {
             // Construct full URL
-            $url = $this->baseUrl . $endpoint;
+            $url = $this->webhook_url . $endpoint;
 
             // Add params to URL if not empty
             if (!empty($params)) {

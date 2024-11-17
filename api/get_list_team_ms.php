@@ -1,5 +1,6 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/services/api_services.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/env.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');

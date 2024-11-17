@@ -8,6 +8,8 @@
 
   const app = createApp({
     setup() {
+      const flag = ref(false);
+      const form = ref({});
       const tableData = ref([]);
       const tableDataKpi = ref([])
       const showFormKPI = ref(false);
@@ -15,12 +17,7 @@
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const allData = ref([]);
-      const flag = ref(false);
       const currMonth = ref(new Date().getMonth() + 1);
-      const userId = <?= json_encode($userID ?? "") ?>;
-      let listProgram = <?= json_encode($program ?? "") ?>;
-      let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
-      let urlTeamMSInfo = <?= json_encode($config["url_team_ms_info"] ?? "") ?>;
       const isEdit = ref(false);
       const loading = ref(false);
       const rejectLoading = ref(false);
@@ -29,9 +26,31 @@
       const pageSize = ref(50);
       const total = ref(0);
       const searchQuery = ref('');
-      const form = ref({});
+      let userId = <?= json_encode($userID ?? "") ?>;
+      let listProgram = <?= json_encode($program ?? "") ?>;
+      let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
+      let urlTeamMSInfo = <?= json_encode($config["url_team_ms_info"] ?? "") ?>;
 
-      const handleSearch = () => {};
+      const debounce = (fn, delay) => {
+        let timeout;
+
+        return (...args) => {
+          if (timeout) clearTimeout(timeout);
+
+          timeout = setTimeout(() => {
+            fn.apply(this, args);
+          }, delay);
+        };
+      };
+
+      const handleSearch = async () => {
+        currentPage.value = 1;
+        await getMsSignupList();
+      };
+
+      const debouncedSearch = debounce((query) => {
+        handleSearch();
+      }, 500);
 
       const handleApprove = async (row) => {
         try {
@@ -192,6 +211,9 @@
 
       const handleAddKPI = async (rowData) => {
         showFormKPI.value = !showFormKPI.value;
+        if (showFormKPI.value) {
+          document.body.style.overflow = 'hidden';
+        }
         const stageInfo = rowData.reviewers.find(reviewer => reviewer.stage_id.toString() === rowData.stage_id);
         const stageLabel = stageInfo ? stageInfo.stage_label : '';
         const hasKpi = stageInfo ? stageInfo.has_kpi : '';
@@ -207,6 +229,7 @@
           user_email: rowData.user_email,
           employee_id: rowData.employee_id,
           department: rowData.department,
+          department_ids: rowData.department_id,
           type_ms: rowData.type_ms,
           type_ms_id: rowData.type_ms_id,
           propose: rowData.propose,
@@ -224,10 +247,10 @@
           await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id);
         }
         if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
+          flag.value = true;
           await getListProposer();
           tableDataKpi.value = [];
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
-          flag.value = true;
         }
       }
 
@@ -302,7 +325,8 @@
           const response = await axios.get(`../../api/get_ms_signup_list.php`, {
             params: {
               limit: pageSize.value,
-              offset: offset
+              offset: offset,
+              searchQuery: searchQuery.value
             }
           });
           const data = response.data;
@@ -331,7 +355,7 @@
       };
 
       const pagination = computed(() => {
-        const pages = Math.ceil(total.value / 50);
+        const pages = Math.ceil(total.value / pageSize.value);
         const currentPage = currentPage.value;
         const pagination = [];
         for (let i = 1; i <= pages; i++) {
@@ -406,12 +430,39 @@
 
       const finalSubmit = async () => {
         try {
+          loading.value = true;
           const response = await axios.post('../../api/final_confirm.php', form.value);
+          if (response.data.success) {
+            ElementPlus.ElMessage({
+              message: 'Xác nhận thành công',
+              type: 'success'
+            });
+            window.location.reload();
+          }
+          else {
+            loading.value = false;
+            ElementPlus.ElMessage({
+              message: response.data.error || 'Có lỗi xảy ra',
+              type: 'error',
+              duration: 3000
+            });
+          }
 
         } catch (error) {
-
+          loading.value = false;
+          ElementPlus.ElMessage({
+            message: error.message || 'Có lỗi xảy ra',
+            type: 'error',
+            duration: 3000
+          });
         }
       }
+
+      const hideOverlay = () => {
+        showFormKPI.value = false;
+        document.body.style.overflow = 'auto';
+      }
+
       onMounted(async () => {
         await getMsSignupList();
         allData.value = tableData.value;
@@ -486,10 +537,11 @@
         pageSize,
         total,
         handlePageChange,
-        handleSearch,
+        debouncedSearch,
         searchQuery,
         isFormValid,
-        finalSubmit
+        finalSubmit,
+        hideOverlay
       }
     }
   });

@@ -216,7 +216,7 @@
                     return;
                 }
                 const response = await getFormSubmited(userId);
-                
+
                 if (response.items[0] && response.items[0].status === "pending") {
                     showForm.value = 2;
                     return;
@@ -264,7 +264,7 @@
                         const response = await axios.post(`../../api/create_ms_regiser.php`, form.value);
                         const data = response.data;
                         if (data.success) {
-                            window.location.href = "https://bitrixdev.esuhai.org/ms-signup/form/list/";
+                            window.location.href = "<?php echo $config['base_url']; ?>/<?php echo $config['root_folder']; ?>/form/list/";
                         } else {
                             loading.value = false;
                             ElementPlus.ElNotification({

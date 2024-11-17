@@ -100,7 +100,7 @@
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   z-index: 998;
   background: black;
   top: 0;

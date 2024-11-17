@@ -2,6 +2,7 @@
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php";
 require $_SERVER["DOCUMENT_ROOT"] .
     "/bitrix/modules/main/include/prolog_before.php";
+require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/env.php';
 
 $APPLICATION->SetTitle("MS Sign Up");
 ?>
@@ -50,11 +51,11 @@ $APPLICATION->SetTitle("MS Sign Up");
 
 <body>
     <div class="mt-3" id="ms-signup">
-        <div class="list-link">
-            <a href="https://bitrixdev.esuhai.org/ms-signup/form/register/" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form đăng ký MS</a>
-            <a href="https://bitrixdev.esuhai.org/ms-signup/form/unregister" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form hủy đăng ký MS</a>
-			<!-- <a href="https://bitrixdev.esuhai.org/ms-signup/form/kpi" class="link-custom"><img src="./public/images/goal.png" alt='icon' />User KPI</a> -->
-        </div>
+       <div class="list-link">
+           <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/register/'; ?>" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form đăng ký MS</a>
+           <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/unregister/'; ?>" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form hủy đăng ký MS</a>
+           <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/list/'; ?>" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Danh sách đơn xét duyệt</a>
+       </div>
     </div>
 
     <?php include "templates/scripts.php"; ?>
