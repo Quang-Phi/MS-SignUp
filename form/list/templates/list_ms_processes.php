@@ -12,8 +12,9 @@
 </div>
 <div class="list-ms-processes">
     <el-table
+     v-loading="tableLoading"
         :data="tableData"
-        :default-sort="{prop: 'id', order: 'descending'}"
+        max-height="500"
         style="width: 100%"
         border default-expand-all>
         <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
@@ -50,7 +51,7 @@
         <el-table-column prop="team_ms" label="Team MS" min-width="150"></el-table-column>
         <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
         <el-table-column prop="confirmation" label="Xác nhận và cam kết" min-width="300"></el-table-column>
-        <el-table-column fixed="right" label="Hành động" min-width="150">
+        <el-table-column fixed="right" label="Hành động" min-width="180">
             <template #default="scope">
                 <div v-if="scope.row.status === 'pending'">
 
@@ -63,7 +64,6 @@
                                                                     parseInt(scope.row.stage_id) === parseInt(scope.row.max_stage)">
                                 <template v-if="!rejectLoading">
                                     <el-button
-                                        link
                                         type="primary"
                                         size="small"
                                         @click="handleAddKPI(scope.row)">
@@ -75,7 +75,6 @@
                             <template v-else>
                                 <template v-if="!rejectLoading">
                                     <el-button
-                                        link
                                         type="primary"
                                         size="small"
                                         @click="handleAddKPI(scope.row)">
@@ -89,7 +88,6 @@
                         <template v-else>
                             <template v-if="!rejectLoading">
                                 <el-button
-                                    link
                                     type="success"
                                     size="small"
                                     :loading="approveLoading"
@@ -102,7 +100,6 @@
 
                         <template v-if="!approveLoading">
                             <el-button
-                                link
                                 type="danger"
                                 size="small"
                                 :loading="rejectLoading"
@@ -130,11 +127,18 @@
         </el-table-column>
     </el-table>
 
-    <div style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between;">
-        <el-pagination background small layout="prev, pager, next" :total="total" :page-size="pageSize"
-            :current-page="currentPage" @current-change="handlePageChange">
+    <div style="margin-top: 20px; position:relative">
+        <el-pagination 
+        background 
+        small 
+        layout="prev, pager, next, sizes" 
+        :total="total" 
+        :page-size="pageSize"
+        :current-page="currentPage" 
+        :page-sizes="[10, 20, 50, 100]"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange">
         </el-pagination>
-        <p>{{ pageSize }} items / 1 page</p>
     </div>
 </div>
 
@@ -155,7 +159,7 @@
                     </a>
                 </template>
                 <template v-else>
-                    <el-select v-model="form.proposer" placeholder="Select">
+                    <el-select v-model="form.proposer_id" placeholder="Select">
                         <el-option
                             v-for="proposer in listProposer"
                             :key="proposer.stage_id"
@@ -181,7 +185,7 @@
             <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
                 <el-table-column fixed prop="program" label="Chương trình" min-width="140" ></el-table-column>
                 <template v-for="month in 12" :key="month">
-                    <el-table-column :prop="'month' + month" :label="'M' + month" width="80">
+                    <el-table-column :prop="'month' + month" :label="'M' + month" min-width="70">
                         <template #default="scope">
                             <el-input
                                 :disabled="flag || month <= currMonth"

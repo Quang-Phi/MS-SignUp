@@ -14,7 +14,11 @@ try {
         'search' => $_GET['searchQuery'],
     ];
 
-    $result = $msSignupList->GetList(array(), $arFilter, $arOptions);
+    $arOrder = [
+        'created_at' => 'DESC',
+    ];
+
+    $result = $msSignupList->GetList($arOrder, $arFilter, $arOptions);
     $list = $result['items'];
 
     foreach ($list as $key => $value) {

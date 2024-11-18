@@ -16,7 +16,7 @@ if ($user) {
     $userFullName = htmlspecialchars($user["LAST_NAME"]) . " " . htmlspecialchars($user["NAME"]);
     $userEmail = $user["EMAIL"];
 
-    $employeeId = $user["UF_USR_1712807573026"];
+    $employeeId = $user[$config['user_employee_id_field']];
     $enumList = CUserFieldEnum::GetList(array(), array('USER_FIELD_ID' => 966));
     $typeMS = array();
     while ($enum = $enumList->Fetch()) {
@@ -31,7 +31,7 @@ if ($user) {
     }
 
     $departmentId = $user["UF_DEPARTMENT"];
-    $msId = $user["UF_USR_1712631669169"];
+    $msId = $user[$config['user_type_ms_field']];
 } else {
     LocalRedirect('/');
 }

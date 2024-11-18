@@ -9,9 +9,11 @@ $config = [
     'hr_ids' => [
         544
     ],
+    'from_mail'=> 'icttool@esuhai.com',
     'workgroup_ms_ids' => [
         13
     ],
+    'user_employee_id_field' => 'UF_USR_1712807573026',
     'user_type_ms_field' => 'UF_USR_1712631669169',
     'send_mail_to' => [
         'control_board' => [

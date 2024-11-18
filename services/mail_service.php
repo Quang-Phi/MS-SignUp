@@ -13,8 +13,7 @@ class MailService
     public function __construct($env)
     {
         $this->config = [
-            'from_email' => 'dac2023@esuhai.com',
-            'from_name' => 'Phi',
+            'from_email' => $env['from_mail'],
             'app_url' => $env['base_url']
         ];
 

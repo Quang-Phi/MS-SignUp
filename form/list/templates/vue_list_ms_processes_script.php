@@ -20,6 +20,7 @@
       const currMonth = ref(new Date().getMonth() + 1);
       const isEdit = ref(false);
       const loading = ref(false);
+      const tableLoading = ref(false);
       const rejectLoading = ref(false);
       const approveLoading = ref(false);
       const currentPage = ref(1);
@@ -249,8 +250,10 @@
         if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
           flag.value = true;
           await getListProposer();
-          tableDataKpi.value = [];
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
+          form.value.proposer_id = listProposer.value[0]?.stage_id;
+          tableDataKpi.value = [];
+          await getUserKpi(rowData.id, rowData.user_id, form.value.proposer_id);
         }
       }
 
@@ -322,6 +325,7 @@
 
       const getMsSignupList = async (offset = 0) => {
         try {
+          tableLoading.value = true;
           const response = await axios.get(`../../api/get_ms_signup_list.php`, {
             params: {
               limit: pageSize.value,
@@ -346,6 +350,8 @@
         } catch (error) {
           console.error('Error fetching:', error);
           tableData.value = [];
+        }finally {
+          tableLoading.value = false;
         }
       };
 
@@ -353,6 +359,11 @@
         currentPage.value = page;
         await getMsSignupList((page - 1) * pageSize.value);
       };
+
+      const handleSizeChange = (val) => {
+        pageSize.value = val;
+        handlePageChange(1);
+      }
 
       const pagination = computed(() => {
         const pages = Math.ceil(total.value / pageSize.value);
@@ -438,8 +449,7 @@
               type: 'success'
             });
             window.location.reload();
-          }
-          else {
+          } else {
             loading.value = false;
             ElementPlus.ElMessage({
               message: response.data.error || 'Có lỗi xảy ra',
@@ -541,7 +551,9 @@
         searchQuery,
         isFormValid,
         finalSubmit,
-        hideOverlay
+        hideOverlay,
+        handleSizeChange,
+        tableLoading
       }
     }
   });

@@ -10,20 +10,6 @@ class EmailTemplates
         $this->env = $env;
     }
 
-    // public function getTemplate($type, $requestData)
-    // {
-    //     switch ($type) {
-    //         case 'request_review':
-    //             return $this->getRequestReviewTemplate($requestData);
-    //         case 'approval':
-    //             return $this->getApprovalTemplate($requestData);
-    //         case 'rejection':
-    //             return $this->getRejectionTemplate($requestData);
-    //         default:
-    //             throw new Exception("Unknown email template type: " . $type);
-    //     }
-    // }
-
     public function getTemplate($type, $requestData)
     {
         $templateMap = [

@@ -49,6 +49,11 @@
   display: none !important;
 }
 
+.el-pagination__sizes{
+  position: absolute;
+  right: 0;
+}
+
 .form-control {
   display: flex;
 }
@@ -85,7 +90,7 @@
 .form-kpi {
   position: fixed;
   right: 0;
-  width: 1140px;
+  width: 1136px;
   height: 100vh;
   z-index: 999;
   top: 0;
