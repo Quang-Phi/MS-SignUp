@@ -1,25 +1,26 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . "/ms-signup/env.php";
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 
 try {
-    $msSignupList = new MsSignupList();
+    $msSignupList = new MsSignupList($config);
 
     $arOrder = [
-        'created_at' => 'desc'
+        'created_at' => 'DESC'
     ];
     $arFilter = [
         'user_id' => intval($_GET['user_id'])
     ];
 
-    $departments = $msSignupList->GetList($arOrder, $arFilter, array());
+    $list = $msSignupList->GetList($arOrder, $arFilter, array(),false);
     http_response_code(200);
     echo json_encode([
         'success' => true,
-        'data' => $departments,
+        'data' => $list,
         'timestamp' => time()
     ]);
 } catch (ApiException $e) {

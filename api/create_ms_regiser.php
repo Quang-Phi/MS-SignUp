@@ -12,7 +12,7 @@ header('Access-Control-Allow-Methods: POST');
 try {
   $formData = json_decode(file_get_contents('php://input'), true);
 
-  $msSignupList = new MsSignupList();
+  $msSignupList = new MsSignupList($config);
   $reviewerStage = new ReviewerStage();
   $stage = new Stage();
 

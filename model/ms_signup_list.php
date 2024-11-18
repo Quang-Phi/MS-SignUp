@@ -8,21 +8,29 @@ class MsSignupList extends CDBResult
   const SCHEMA = 's2config';
   const TABLE_NAME = 'ms_signup_list';
   const ID_FIELD = 'id';
-
   private $QUERY_TABLE;
+  private $config = [];
 
-  public function __construct()
+  public function __construct($env)
   {
     global $DB;
     $this->db = $DB;
     $this->QUERY_TABLE = self::SCHEMA . "." . self::TABLE_NAME;
+    $this->config = $env;
   }
 
-  public function GetList($arOrder = array(), $arFilter = array(), $arOptions = array())
+  public function GetList($arOrder = array(), $arFilter = array(), $arOptions = array(), $check = true)
   {
-    global $USER;
-    $userID = intval($USER->GetID());
-    $admin = $USER->IsAdmin();
+    $admin = true;
+    if ($check) {
+      global $USER;
+      $userID = intval($USER->GetID());
+      if (in_array($userID, $this->config['admin_users'])) {
+        $admin = true;
+      } else {
+        $admin = $USER->IsAdmin();
+      }
+    }
 
     $searchQuery = isset($arOptions['search']) ? trim($arOptions['search']) : '';
     $searchQuery = $this->db->ForSQL($searchQuery);
@@ -30,13 +38,19 @@ class MsSignupList extends CDBResult
     if ($admin) {
       $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl";
     } else {
+      // $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
+      //                WHERE msl.user_id = '$userID'
+      //                UNION
+      //                SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
+      //                INNER JOIN " . self::SCHEMA . ".reviewer_stage r ON msl.id = r.ms_list_id
+      //                WHERE r.reviewer_id = '$userID'
+      //                AND r.stage_id = msl.stage_id";
       $baseQuery = "SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
                      WHERE msl.user_id = '$userID'
                      UNION
                      SELECT msl.* FROM " . $this->QUERY_TABLE . " msl
-                     INNER JOIN " . self::SCHEMA . ".reviewer r ON msl.id = r.ms_list_id
-                     WHERE r.reviewer_id = '$userID'
-                     AND r.stage_id = msl.stage_id";
+                     INNER JOIN " . self::SCHEMA . ".reviewer_stage r ON msl.id = r.ms_list_id
+                     WHERE r.reviewer_id = '$userID'";
     }
 
     $whereParts = array();
@@ -88,26 +102,37 @@ class MsSignupList extends CDBResult
         $baseQuery .= " WHERE " . implode(" AND ", $whereParts);
       }
     }
-
-    $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
-    try {
-      $totalRes = $this->db->Query($totalQuery);
-      $total = $totalRes->Fetch();
-    } catch (Exception $e) {
-      error_log("Error in total count query: " . $e->getMessage());
-      return false;
+    if ($admin) {
+      $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
+      try {
+        $totalRes = $this->db->Query($totalQuery);
+        $total = $totalRes->Fetch();
+      } catch (Exception $e) {
+        error_log("Error in total count query: " . $e->getMessage());
+        return false;
+      }
+    } else {
+      $total = $this->getTotalCount($baseQuery);
     }
 
     if (!empty($arOrder)) {
-      $tableAlias = (!$admin && !empty($whereParts)) ? 'filtered_msl' : 'msl';
-      $orderParts = array();
-      foreach ($arOrder as $field => $direction) {
-        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
-        $orderParts[] = "$tableAlias.$field $direction";
+      if ($admin) {
+        $tableAlias = (!$admin && !empty($whereParts)) ? 'filtered_msl' : 'msl';
+        $orderParts = array();
+        foreach ($arOrder as $field => $direction) {
+          $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+          $orderParts[] = "$tableAlias.$field $direction";
+        }
+        $baseQuery .= " ORDER BY " . implode(", ", $orderParts);
+      } else {
+        $orderParts = array();
+        foreach ($arOrder as $field => $direction) {
+          $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+          $orderParts[] = "$field $direction";
+        }
+        $baseQuery = "SELECT * FROM ($baseQuery) AS temp_table ORDER BY " . implode(", ", $orderParts);
       }
-      $baseQuery .= " ORDER BY " . implode(", ", $orderParts);
     }
-
     if (!empty($arOptions['limit'])) {
       $limit = intval($arOptions['limit']);
       $baseQuery .= " LIMIT $limit";
@@ -117,7 +142,6 @@ class MsSignupList extends CDBResult
         $baseQuery .= " OFFSET $offset";
       }
     }
-
     try {
       $dbRes = $this->db->Query($baseQuery);
       $arResult = array();
@@ -133,6 +157,27 @@ class MsSignupList extends CDBResult
     } catch (Exception $e) {
       error_log("Error in final query: " . $e->getMessage());
       return false;
+    }
+  }
+
+  private function getTotalCount($baseQuery)
+  {
+    try {
+      $modifiedQuery = str_replace("SELECT msl.*", "SELECT msl.id", $baseQuery);
+      $countQuery = "SELECT COUNT(*) as total FROM (
+            $modifiedQuery
+        ) as combined_results";
+
+      $totalRes = $this->db->Query($countQuery);
+      if (!$totalRes) {
+        return 0;
+      }
+
+      $total = $totalRes->Fetch();
+      return $total ?: 0;
+    } catch (Exception $e) {
+      error_log("Error in total count query: " . $e->getMessage());
+      return 0;
     }
   }
 

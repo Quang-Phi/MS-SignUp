@@ -1,12 +1,13 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/env.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 
 try {
-    $msSignupList = new MsSignupList();
+    $msSignupList = new MsSignupList($config);
 
     $arOptions = [
         'limit' => $_GET['limit'],

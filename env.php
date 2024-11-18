@@ -6,6 +6,7 @@ $config = [
     'url_team_ms_info' => 'https://bitrixdev.esuhai.org/company/structure.php?set_filter_structure=Y&structure_UF_DEPARTMENT=',
     'webhook_url' => 'https://bitrixdev.esuhai.org/rest/544/3bm30pypmym3jou1',
     'msa_id' => 37,
+    'admin_users' => [],
     'hr_ids' => [
         544
     ],

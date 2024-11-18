@@ -9,7 +9,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 
 try {
-    $msSignupList = new MsSignupList();
+    $msSignupList = new MsSignupList($config);
     $reviewerStage = new ReviewerStage();
 
     $jsonData = file_get_contents("php://input");

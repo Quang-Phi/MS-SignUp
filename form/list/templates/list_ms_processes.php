@@ -54,7 +54,6 @@
         <el-table-column fixed="right" label="Hành động" min-width="180">
             <template #default="scope">
                 <div v-if="scope.row.status === 'pending'">
-
                     <template v-if="scope.row.reviewers.some(reviewer =>
                                         reviewer.reviewer_id === parseInt(userId) &&
                                         reviewer.stage_id === parseInt(scope.row.stage_id))">
