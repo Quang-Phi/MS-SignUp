@@ -1,18 +1,15 @@
 <div class="title">
-    <h1 style="font-size:25px;margin:10px 0;" class="title-page">Danh sách chờ xét duyệt</h1>
+    <h1 style="font-size:25px;margin:10px 0;" class="title-page" v-html="pageTitle"></h1>
 </div>
 <div :class="showFormKPI ? 'overlay active' : 'overlay'" @click="hideOverlay()"></div>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <div>
-        <span>TỔNG:</span>
-        <span style="font-weight: bold; margin-left: 4px">{{ total }}</span>
-    </div>
+    <span v-html="totalText"></span>
 
     <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch" />
 </div>
 <div class="list-ms-processes">
     <el-table
-     v-loading="tableLoading"
+        v-loading="tableLoading"
         :data="tableData"
         max-height="500"
         style="width: 100%"
@@ -51,6 +48,7 @@
         <el-table-column prop="team_ms" label="Team MS" min-width="150"></el-table-column>
         <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
         <el-table-column prop="confirmation" label="Xác nhận và cam kết" min-width="300"></el-table-column>
+        <el-table-column prop="comments" label="Ghi chú" min-width="100"></el-table-column>
         <el-table-column fixed="right" label="Hành động" min-width="180">
             <template #default="scope">
                 <div v-if="scope.row.status === 'pending'">
@@ -89,7 +87,7 @@
                                 <el-button
                                     type="success"
                                     size="small"
-                                    :loading="approveLoading"
+                                    :loading="approveLoading || loading"
                                     :disabled="approveLoading"
                                     @click="handleApprove(scope.row)">
                                     Xét duyệt
@@ -101,7 +99,7 @@
                             <el-button
                                 type="danger"
                                 size="small"
-                                :loading="rejectLoading"
+                                :loading="rejectLoading || loading"
                                 :disabled="rejectLoading"
                                 @click="handleReject(scope.row)">
                                 Từ chối
@@ -110,7 +108,13 @@
 
                     </template>
                     <template v-else>
-                        <span style="color: #999">Không có quyền thao tác</span>
+                        <el-button
+                            link
+                            type="primary"
+                            size="small"
+                            :disabled="true">
+                            Đang chờ xét duyệt
+                        </el-button>
                     </template>
                 </div>
                 <div v-else>
@@ -127,16 +131,16 @@
     </el-table>
 
     <div style="margin-top: 20px; position:relative">
-        <el-pagination 
-        background 
-        small 
-        layout="prev, pager, next, sizes" 
-        :total="total" 
-        :page-size="pageSize"
-        :current-page="currentPage" 
-        :page-sizes="[10, 20, 50, 100]"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange">
+        <el-pagination
+            background
+            small
+            layout="prev, pager, next, sizes"
+            :total="total"
+            :page-size="pageSize"
+            :current-page="currentPage"
+            :page-sizes="[10, 20, 50, 100]"
+            @current-change="handlePageChange"
+            @size-change="handleSizeChange">
         </el-pagination>
     </div>
 </div>
@@ -170,19 +174,19 @@
             </el-form-item>
             <el-form-item label="Người nhận KPI:" prop="user_name">
                 <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
-                    {{ form.user_name }}
+                    <span v-html="linkProposerText"></span>
                 </a>
             </el-form-item>
             <el-form-item label="Nhóm MS:" prop="team_ms">
                 <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
-                    {{ form.team_ms }}
+                    <span v-html="linkTeamMSText"></span>
                 </a>
             </el-form-item>
         </div>
 
         <div class="form-table">
             <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
-                <el-table-column fixed prop="program" label="Chương trình" min-width="140" ></el-table-column>
+                <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
                 <template v-for="month in 12" :key="month">
                     <el-table-column :prop="'month' + month" :label="'M' + month" min-width="70">
                         <template #default="scope">
@@ -228,22 +232,14 @@
         <div class="user_confirm" v-if="form.max_stage === form.stage_id">
             <div style="margin-top: 20px;">
                 <el-checkbox v-model="form.agree_kpi">
-                    Tôi đồng ý với các KPI được phân công ở bảng trên
+                    <span v-html="agreeKpiText"></span>
                 </el-checkbox>
             </div>
-
             <div v-if="form.list_propose && form.list_propose.length > 0 && form.list_propose[0].trim() !== ''">
                 <el-checkbox v-model="form.received_all">
-                    Tôi đã nhận đủ các phần yêu cầu sau:
+                    <span v-html="agreeReceivedText"></span>
                 </el-checkbox>
-
-                <div style="margin-left: 24px; margin-top: 10px;">
-                    <ul>
-                        <li v-for="(item, index) in form.list_propose" :key="index" style="margin: 5px 0;">
-                            {{ item.trim() }}
-                        </li>
-                    </ul>
-                </div>
+                <span v-html="listText"></span>
             </div>
         </div>
 
@@ -254,7 +250,7 @@
                     @click="finalSubmit()"
                     :loading="loading"
                     :disabled="loading || !isFormValid">
-                    Xác nhận
+                    <span v-html="textBtn1"></span>
                 </el-button>
             </el-form-item>
         </div>
@@ -265,7 +261,7 @@
                     @click="submitForm('approve')"
                     :loading="approveLoading"
                     :disabled="approveLoading">
-                    Đồng ý duyệt
+                    <span v-html="textBtn2"></span>
                 </el-button>
             </el-form-item>
 
@@ -275,14 +271,14 @@
                     @click="submitForm('create kpi')"
                     :loading="loading"
                     :disabled="loading || approveLoading">
-                    Gửi KPI
+                    <span v-html="textBtn3"></span>
                 </el-button>
                 <el-button
                     type="primary"
                     @click="submitForm('create and approve')"
                     :loading="approveLoading"
                     :disabled="approveLoading || loading">
-                    Gửi và Duyệt
+                    <span v-html="textBtn4"></span>
                 </el-button>
             </el-form-item>
         </div>

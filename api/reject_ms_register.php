@@ -39,6 +39,7 @@ try {
 
     $arFields = [
         "status" => "error",
+        "comments" => $post["comments"],
     ];
 
     $arrFields2 = [

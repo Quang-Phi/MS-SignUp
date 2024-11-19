@@ -31,6 +31,37 @@
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
       let urlTeamMSInfo = <?= json_encode($config["url_team_ms_info"] ?? "") ?>;
+      const pageTitle = `Danh sách chờ xét duyệt`;
+      const agreeKpiText = `Tôi đồng ý với các KPI được phân công ở bảng trên`;
+      const agreeReceivedText = `Tôi đã nhận đủ các phần yêu cầu sau:`;
+      const textBtn1 = `Xác nhận`;
+      const textBtn2 = `Đồng ý duyệt`;
+      const textBtn3 = `Gửi KPI`;
+      const textBtn4 = `Gửi và Duyệt`;
+      const totalText = computed(() => {
+        return `<span>TỔNG:</span>
+          <span style="font-weight: bold; margin-left: 4px">${total.value}</span>`;
+      });
+
+      const linkProposerText = computed(() => {
+        return form.value.user_name;
+      });
+
+      const linkTeamMSText = computed(() => {
+        return form.value.team_ms;
+      });
+
+      const listText = computed(() => {
+        const listItems = form.value.list_propose
+          .map(item => `<li style="margin: 5px 0;">${item.trim()}</li>`)
+          .join('');
+
+        return `<div style="margin-left: 24px; margin-top: 10px;">
+                <ul>
+                    ${listItems}
+                </ul>
+            </div>`;
+      });
 
       const debounce = (fn, delay) => {
         let timeout;
@@ -181,10 +212,6 @@
         }
       };
 
-      const checkEnabelSelect = () => {
-        return form.value.proposer && form.value.manager && form.value.team_ms
-      }
-
       const deleteRow = (index, program) => {
         tableDataKpi.value.splice(index, 1)
         createdProgram.value.splice(createdProgram.value.indexOf(program), 1)
@@ -258,7 +285,7 @@
       }
 
       const isFormValid = computed(() => {
-        if (Array.isArray(form.list_propose) && form.list_propose[0] !== '') {
+        if (Array.isArray(form.value.list_propose) && form.value.list_propose[0] !== '') {
           return form.value.agree_kpi && form.value.received_all;
         }
         return form.value.agree_kpi;
@@ -335,7 +362,7 @@
           });
           const data = response.data;
           data.data.forEach(element => {
-            if (element.list_propose) {
+            if (element.list_propose != "") {
               element.list_propose = JSON.parse(element.list_propose).join(', ');
             }
             element.created_at = new Date(element.created_at).toLocaleDateString('vi-VN');
@@ -350,7 +377,7 @@
         } catch (error) {
           console.error('Error fetching:', error);
           tableData.value = [];
-        }finally {
+        } finally {
           tableLoading.value = false;
         }
       };
@@ -385,7 +412,13 @@
 
       const handleCreateKpi = async ($flag = true) => {
         try {
-          loading.value = $flag;
+
+          if (!$flag) {
+            loading.value = $flag;
+            approveLoading.value = true;
+          } else {
+            loading.value = true;
+          }
           form.value.kpi = tableDataKpi.value;
           const response = await axios.post(`../../api/create_kpi.php`, form.value);
           if (response.data.success) {
@@ -393,13 +426,17 @@
               message: 'Tạo KPI thành công',
               type: 'success'
             });
-            window.location.reload();
+            if ($flag) {
+              window.location.reload();
+            }
           } else {
             loading.value = false;
+            approveLoading.value = false;
             throw new Error(response.data.message || 'Có lỗi xảy ra');
           }
         } catch (error) {
           loading.value = false;
+          approveLoading.value = false;
           tableData.value = {};
           ElementPlus.ElMessage({
             message: error.message || 'Có lỗi xảy ra khi tạo KPI',
@@ -469,8 +506,10 @@
       }
 
       const hideOverlay = () => {
-        showFormKPI.value = false;
-        document.body.style.overflow = 'auto';
+        if (!loading.value && !approveLoading.value) {
+          showFormKPI.value = false;
+          document.body.style.overflow = 'auto';
+        }
       }
 
       onMounted(async () => {
@@ -526,7 +565,6 @@
         handleApprove,
         handleReject,
         showFormKPI,
-        checkEnabelSelect,
         form,
         deleteRow,
         handleAddKPI,
@@ -553,7 +591,18 @@
         finalSubmit,
         hideOverlay,
         handleSizeChange,
-        tableLoading
+        tableLoading,
+        pageTitle,
+        totalText,
+        agreeKpiText,
+        agreeReceivedText,
+        textBtn1,
+        textBtn2,
+        textBtn3,
+        textBtn4,
+        listText,
+        linkProposerText,
+        linkTeamMSText
       }
     }
   });

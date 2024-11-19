@@ -15,9 +15,9 @@
             const searchResults = ref([]);
             const manager = ref(null);
             const loading = ref(false);
+            const pageLoading = ref(true);
             const showForm = ref(0);
             const dialogVisible = ref(false);
-
             const userName = <?= json_encode($userFullName ?? "") ?>;
             const userEmail = <?= json_encode($userEmail ?? "") ?>;
             const userId = <?= json_encode($userID ?? "") ?>;
@@ -51,6 +51,39 @@
                 "Line tổng đài Omical",
                 "Thiết bị MS (Tai nge, webcam,...)",
             ])
+
+            const pageTitle = `Form đăng ký làm MS`;
+            const dialogContent = `
+                <div class="dialog-content">
+                    <div class="main-commitments">
+                        <p>1. <span>TRUNG THỰC</span> trong giao dịch, đảm bảo tính chính xác của bảng chào giá của công ty Esuhai Group. Nếu có thương lượng thay đổi giá, phải thông qua phê duyệt của Công ty.</p>
+                        <p>2. <span>KHÔNG</span> tiến hành thu thập thông tin liên quan S2Group nếu không được phép tiếp cận;</p>
+                        <p>3. <span>TUYỆT ĐỐI KHÔNG</span> lạm dụng chức vụ, quyền hạn, nhiệm vụ để móc nối môi giới, cò mồi người lao động, các đối tác để nhận tiền, quà, hiện vật, … dưới mọi hình thức, thời gian, địa điểm, ….</p>
+                        <p>4. <span>TUYỆT ĐỐI KHÔNG</span> cung cấp thông tin, dữ liệu liên quan hồ sơ, công việc, tình hình Công ty, khách hàng, đối tác, dự án đang triển khai, bí mật kinh doanh…cho bên thứ ba và/hoặc cơ quan ngôn luận dưới mọi hình thức mà chưa được sự chấp thuận của Ban Giám đốc;</p>
+                        <p>5. <span>KHÔNG ĐƯỢC PHÉP</span> trực tiếp hay gián tiếp tiết lộ hoặc để cho bất kỳ cá nhân hay tổ chức nào khác (kể cả người trong S2Group nếu người đó không được quyền tiếp cận thông tin bảo mật) sử dụng trừ khi điều đó là yêu cầu của công việc và/hoặc có sự đồng ý của cấp trên;</p>
+                    </div>
+            
+                    <div class="working-period">
+                        <p>6. <span>Trong thởi gian làm việc tại Công ty Esuhai Group</span> tôi cam kết:</p>
+                        <ul>
+                            <li>Không đồng thởi làm việc hay cộng tác dưới bất cứ hình thức nào với tổ chức, cá nhân có quyền lợi đối lập hoặc có khả năng cạnh tranh với Công ty</li>
+                            <li>Không lợi dụng quan hệ giữa Công ty và khách hàng, đối tác của S2Group để thiết lập quan hệ giao dịch với Khách hàng, đối tác vì mục đích cá nhân hoặc vì bất cứ mục đích nào khác mà không được sự chấp thuận của Ban Giám đốc.</li>
+                            <li>Đồng ý cho Công ty Group được sử dụng thông tin, hình ảnh của mình phục vụ cho mục đích truyền thông cho các hoạt động của Công ty</li>
+                            <li>Thực hiện quy định về việc sử dụng Facebook cá nhân trong công việc nhằm nâng cao thương hiệu cá nhân của nhân sự Esuhai đồng thởi bảo vệ quyền lợi, hình ảnh, thương hiệu, uy tín của Công ty.</li>
+                            <li>Không tự mình hoặc kết hợp hoặc thay mặt bất cứ cá nhân hoặc tổ chức nào tiến hành bất kỳ hoạt động kinh doanh nào cạnh tranh trực tiếp hoặc gián tiếp với Công ty.</li>
+                        </ul>
+                    </div>
+            
+                    <div class="responsibility">
+                        <p><span>TÔI CAM ĐOAN CÓ TRÁCH NHIỆM BỒI THƯỜNG MỌI THIỆT HẠI CHO CÔNG TY</span>, bao gồm không giới hạn những tổn thất về vật chất, uy tín, hình ảnh, chi phí để khắc phục thiệt hại, chi phí kiện tụng, luật sư.</p>
+                        <p>Tôi hiểu rằng Công ty Esuhai Group hoàn toàn có thể thực hiện một hoặc đồng thời các biện pháp sau đây:</p>
+                        <p>1. Yêu cầu tôi bồi thường thiệt hại do những tổn thất mà S2Group phải gánh chịu do hậu quả của việc tiết lộ thông tin bảo mật của tôi gây ra;</p>
+                        <p>2. Khởi kiện tại Tòa án có thẩm quyền theo quy định của pháp luật hiện hành.</p>
+                    </div>
+                </div>
+            `;
+            const dialogCheckbox = ` Tôi đã đọc và ĐỒNG Ý, CAM KẾT tuân thủ các quy định của công ty`;
+            const dialogLink = `Xem và chấp nhận quy định về việc tham gia hoạt động MS`;
 
             const rules = {
                 team_ms_id: [{
@@ -235,6 +268,7 @@
                 } catch (error) {
                     console.error('Error in onMounted:', error);
                 }
+                pageLoading.value = false;
             });
 
             const submitForm = async () => {
@@ -257,8 +291,9 @@
                             }
                         });
                         form.value.department_id = JSON.stringify(form.value.department_id);
-                        form.value.list_propose = JSON.stringify(form.value.list_propose);
-                        console.log(form.value);
+                        if (form.value.list_propose != null) {
+                            form.value.list_propose = JSON.stringify(form.value.list_propose);
+                        }
                         //const response = await axios.post(`./register_wf.php`, formData);
 
                         const response = await axios.post(`../../api/create_ms_regiser.php`, form.value);
@@ -291,6 +326,7 @@
                 form,
                 rules,
                 loading,
+                pageLoading,
                 submitForm,
                 ruleFormRef,
                 listTeamMS,
@@ -307,7 +343,11 @@
                 userId,
                 dpmString,
                 listPropose,
-                dialogVisible
+                dialogVisible,
+                dialogContent,
+                dialogCheckbox,
+                dialogLink,
+                pageTitle
             }
         }
     });

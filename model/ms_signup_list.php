@@ -21,16 +21,14 @@ class MsSignupList extends CDBResult
 
   public function GetList($arOrder = array(), $arFilter = array(), $arOptions = array(), $check = true)
   {
-    $admin = true;
-    if ($check) {
-      global $USER;
-      $userID = intval($USER->GetID());
-      if (in_array($userID, $this->config['admin_users'])) {
-        $admin = true;
-      } else {
-        $admin = $USER->IsAdmin();
-      }
+    global $USER;
+    $userID = intval($USER->GetID());
+    if (in_array($userID, $this->config['admin_users'])) {
+      $check = false;
     }
+    $check ? $admin = $USER->IsAdmin() : $admin = true;
+
+
 
     $searchQuery = isset($arOptions['search']) ? trim($arOptions['search']) : '';
     $searchQuery = $this->db->ForSQL($searchQuery);
