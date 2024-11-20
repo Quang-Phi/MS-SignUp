@@ -9,15 +9,18 @@
   const app = createApp({
     setup() {
       const flag = ref(false);
+      const editFlag = ref(false);
       const form = ref({});
       const tableData = ref([]);
       const tableDataKpi = ref([])
+      const oldDataKpi = ref([])
       const showFormKPI = ref(false);
       const createdProgram = ref([]);
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const allData = ref([]);
       const currMonth = ref(new Date().getMonth() + 1);
+      const currYear = ref(new Date().getFullYear());
       const isEdit = ref(false);
       const loading = ref(false);
       const tableLoading = ref(false);
@@ -27,17 +30,20 @@
       const pageSize = ref(50);
       const total = ref(0);
       const searchQuery = ref('');
+      const activeName = ref('pending');
       let userId = <?= json_encode($userID ?? "") ?>;
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
       let urlTeamMSInfo = <?= json_encode($config["url_team_ms_info"] ?? "") ?>;
-      const pageTitle = `Danh sách chờ xét duyệt`;
+      const pageTitle = `Danh sách đơn đăng ký làm MS`;
       const agreeKpiText = `Tôi đồng ý với các KPI được phân công ở bảng trên`;
       const agreeReceivedText = `Tôi đã nhận đủ các phần yêu cầu sau:`;
       const textBtn1 = `Xác nhận`;
-      const textBtn2 = `Đồng ý duyệt`;
-      const textBtn3 = `Gửi KPI`;
-      const textBtn4 = `Gửi và Duyệt`;
+      const textBtn2 = `Xét duyệt`;
+      const textBtn3 = `Gửi yêu cầu`;
+      const yearText = computed(() => {
+        return `<span>${currYear.value}</span>`
+      })
       const totalText = computed(() => {
         return `<span>TỔNG:</span>
           <span style="font-weight: bold; margin-left: 4px">${total.value}</span>`;
@@ -75,29 +81,56 @@
         };
       };
 
-      const handleSearch = async () => {
+      const handleSearch = async (type) => {
         currentPage.value = 1;
-        await getMsSignupList();
+        let arFilter = null;
+        switch (type) {
+          case 'pending':
+            arFilter = {
+              status: 'pending'
+            };
+            break;
+          case 'approved':
+            arFilter = {
+              status: 'success'
+            };
+            break;
+          case 'rejected':
+            arFilter = {
+              status: 'error'
+            };
+            break;
+          default:
+            break;
+        }
+        if (arFilter) {
+          await getMsSignupList(0, arFilter);
+        }
       };
 
-      const debouncedSearch = debounce((query) => {
-        handleSearch();
+      const debouncedSearch = debounce((type) => {
+        handleSearch(type);
       }, 500);
 
-      const handleApprove = async (row) => {
+      const handleApprove = async (row, paramsApprove = null) => {
         try {
           approveLoading.value = true;
-          const params = {
-            id: row.id,
-            stage_id: row.stage_id,
-            user_name: row.user_name,
-            user_email: row.user_email,
-            employee_id: row.employee_id,
-            department: row.department,
-            type_ms: row.type_ms,
-            team_ms: row.team_ms,
-            propose: row.propose,
-          };
+          let params = null;
+          if (paramsApprove) {
+            params = paramsApprove;
+          } else {
+            params = {
+              id: row.id,
+              stage_id: row.stage_id,
+              user_name: row.user_name,
+              user_email: row.user_email,
+              employee_id: row.employee_id,
+              department: row.department,
+              type_ms: row.type_ms,
+              team_ms: row.team_ms,
+              propose: row.list_propose.split(/, (?![^(]*\))/)
+            };
+          }
 
           const response = await axios.post('../../api/approve_ms_register.php', params);
 
@@ -164,6 +197,7 @@
               const response = await axios.post('../../api/reject_ms_register.php', {
                 id: row.id,
                 stage_id: row.stage_id,
+                user_id: row.user_id,
                 user_name: row.user_name,
                 user_email: row.user_email,
                 employee_id: row.employee_id,
@@ -217,6 +251,13 @@
         createdProgram.value.splice(createdProgram.value.indexOf(program), 1)
       }
 
+      const editRow = () => {
+        flag.value = false;
+        editFlag.value = true;
+        oldDataKpi.value = tableDataKpi.value.map(row => ({
+          ...row
+        }));
+      }
       const onAddItem = (program) => {
         if (!createdProgram.value.includes(program)) {
           createdProgram.value.push(program)
@@ -245,9 +286,9 @@
         const stageInfo = rowData.reviewers.find(reviewer => reviewer.stage_id.toString() === rowData.stage_id);
         const stageLabel = stageInfo ? stageInfo.stage_label : '';
         const hasKpi = stageInfo ? stageInfo.has_kpi : '';
-
         form.value = {
           stage: stageLabel,
+          status: rowData.status,
           stage_id: rowData.stage_id,
           max_stage: rowData.max_stage,
           list_propose: rowData.list_propose.split(', '),
@@ -267,6 +308,7 @@
           reviewers: rowData.reviewers,
           agree_kpi: false,
           received_all: false,
+          year: currMonth.value === 12 ? currYear.value + 1 : currYear.value,
           kpi: ''
         };
 
@@ -285,9 +327,6 @@
       }
 
       const isFormValid = computed(() => {
-        if (Array.isArray(form.value.list_propose) && form.value.list_propose[0] !== '') {
-          return form.value.agree_kpi && form.value.received_all;
-        }
         return form.value.agree_kpi;
       });
 
@@ -350,14 +389,15 @@
         }
       }
 
-      const getMsSignupList = async (offset = 0) => {
+      const getMsSignupList = async (offset = 0, $arFilter = null) => {
         try {
           tableLoading.value = true;
           const response = await axios.get(`../../api/get_ms_signup_list.php`, {
             params: {
               limit: pageSize.value,
               offset: offset,
-              searchQuery: searchQuery.value
+              searchQuery: searchQuery.value,
+              arFilter: $arFilter
             }
           });
           const data = response.data;
@@ -384,7 +424,29 @@
 
       const handlePageChange = async (page) => {
         currentPage.value = page;
-        await getMsSignupList((page - 1) * pageSize.value);
+        let arFilter = null;
+        switch (activeName.value) {
+          case 'pending':
+            arFilter = {
+              status: 'pending'
+            };
+            break;
+          case 'approved':
+            arFilter = {
+              status: 'success'
+            };
+            break;
+          case 'rejected':
+            arFilter = {
+              status: 'error'
+            };
+            break;
+          default:
+            break;
+        }
+        if (arFilter) {
+          await getMsSignupList((page - 1) * pageSize.value, arFilter);
+        }
       };
 
       const handleSizeChange = (val) => {
@@ -455,7 +517,7 @@
 
           let hasData = false;
           for (let j = 1; j <= 12; j++) {
-            if (row[`m${j}`] !== "" && Number(row[`m${j}`]) !== 0) {
+            if (row[`m${j}`] !== "" && row[`m${j}`] > 0) {
               hasData = true;
               break;
             }
@@ -467,9 +529,9 @@
         }
         if (list.length > 0) {
           if (list.length === 1) {
-            return `Vui lòng nhập KPI cho chương trình ${list[0]}`;
+            return `Vui lòng nhập KPI cho chương trình ${list[0]} là số nguyên dương`;
           } else {
-            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')}`;
+            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} là số nguyên dương`;
           }
         }
 
@@ -512,8 +574,71 @@
         }
       }
 
+      const checkDisabled = (month) => {
+        if (month <= currMonth.value && form.value.year === currYear.value) {
+          return true;
+        }
+        return false;
+      }
+
+      const handleClick = async (tab, event) => {
+        activeName.value = tab.props.name;
+        let arFilter = null;
+        switch (tab.props.name) {
+          case 'pending':
+            arFilter = {
+              status: 'pending'
+            };
+            break;
+          case 'approved':
+            arFilter = {
+              status: 'success'
+            };
+            break;
+          case 'rejected':
+            arFilter = {
+              status: 'error'
+            };
+            break;
+          default:
+            break;
+        }
+        if (arFilter) {
+          await getMsSignupList(0, arFilter);
+        }
+      };
+
+      const resendEditKpi = async () => {
+        form.value.old_kpi = oldDataKpi.value;
+        form.value.stage_id = form.value.proposer_id;
+        try {
+          await handleCreateKpi(false);
+          const params = {
+            id: form.value.ms_list_id,
+            stage_id: form.value.stage_id,
+            user_name: form.value.user_name,
+            user_email: form.value.user_email,
+            employee_id: form.value.employee_id,
+            department: form.value.department,
+            type_ms: form.value.type_ms,
+            team_ms: form.value.team_ms,
+            propose: form.value.list_propose,
+            process_deal: [],
+            change_kpi: true
+          };
+          await handleApprove(null, params);
+
+        } catch (error) {
+          ElementPlus.ElMessage({
+            message: error.message || 'Có lỗi xảy ra',
+            type: 'error'
+          });
+        }
+      }
       onMounted(async () => {
-        await getMsSignupList();
+        await getMsSignupList(0, arFilter = {
+          status: 'pending'
+        });
         allData.value = tableData.value;
       });
 
@@ -528,6 +653,7 @@
           type_ms: form.value.type_ms,
           team_ms: form.value.team_ms,
           propose: form.value.propose,
+          list_propose: form.value.list_propose.join(', '),
         };
         const flag = validateTableKpiData();
         if (flag !== true) {
@@ -599,10 +725,16 @@
         textBtn1,
         textBtn2,
         textBtn3,
-        textBtn4,
         listText,
         linkProposerText,
-        linkTeamMSText
+        linkTeamMSText,
+        checkDisabled,
+        activeName,
+        handleClick,
+        yearText,
+        editRow,
+        editFlag,
+        resendEditKpi
       }
     }
   });

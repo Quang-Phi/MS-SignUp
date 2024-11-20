@@ -56,29 +56,20 @@ CREATE TABLE s2config.kpi (
 PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
-INSERT INTO s2config.proposal_unit (value) VALUES ('Phòng Nhân sự'), ('MSA');
-
-https://bitrixdev.esuhai.org/ms-signup/form/kpi/?login=yes&proposer_id=2&user_id=10&team_ms=555
-
-CREATE TABLE s2config.ms_signup_list (
+CREATE TABLE s2config.kpi_history (
   `id` int NOT NULL AUTO_INCREMENT,
-  `employee_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `use_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `use_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `stage_id` int NOT NULL DEFAULT '1',
-  `max_stage` int,
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `department_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `team_ms_id` int NOT NULL,
-  `type_ms_id` int NOT NULL,
-  `list_propose` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `confirmation` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `comments` text COLLATE utf8mb4_unicode_ci,
+  `stage_id` int NOT NULL,
+  `kpi_id` int NOT NULL,
+  `old_kpi` TEXT,
+  `is_temporary` boolean DEFAULT false,
+  `is_use` boolean DEFAULT true,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE s2config.ms_signup_list
+ADD COLUMN process_deal TINYINT(1) NOT NULL DEFAULT 0 AFTER confirmation;
 
 CREATE TABLE s2config.stage (
   `id` int NOT NULL AUTO_INCREMENT,

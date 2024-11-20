@@ -13,7 +13,7 @@ class EmailTemplates
     public function getTemplate($type, $requestData)
     {
         $templateMap = [
-            'request_review' => 'getRequestReviewTemplate',
+            'review' => 'getRequestReviewTemplate',
             'approval' => 'getApprovalTemplate',
             'rejection' => 'getRejectionTemplate',
         ];
@@ -32,7 +32,7 @@ class EmailTemplates
     private function getRequestReviewTemplate($requestData)
     {
         $proposeList = '';
-        if (is_array($requestData['propose'])) {
+        if (is_array($requestData['propose']) && count($requestData['propose']) > 0) {
             foreach ($requestData['propose'] as $index => $item) {
                 $proposeList .= "<li>{$item}</li>";
             }

@@ -15,9 +15,13 @@ try {
         'search' => $_GET['searchQuery'],
     ];
 
+    $arFilter = $_GET['arFilter'] ?? [];
+
     $arOrder = [
         'created_at' => 'DESC',
+        
     ];
+
 
     $result = $msSignupList->GetList($arOrder, $arFilter, $arOptions);
     $list = $result['items'];

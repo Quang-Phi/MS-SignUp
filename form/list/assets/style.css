@@ -9,6 +9,10 @@
   flex: 1 !important;
 }
 
+.el-step.customzz .el-step__head {
+  background-color: #67c23a !important;
+}
+
 .el-step:first-child .el-step__head{
   border-radius: 3px 0 0 3px;
 }
@@ -68,7 +72,6 @@
 
 .el-form-item__label-wrap {
   margin: 0 !important;
-  min-width: 180px;
 }
 
 .el-form-item.is-required .el-form-item__label::before {
@@ -120,4 +123,8 @@
 .overlay.active {
   visibility: visible;
   opacity: 0.4;
+}
+
+.el-button+.el-button {
+  margin-left: 0 !important;
 }

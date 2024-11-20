@@ -79,7 +79,7 @@ try {
     "department" => $formData["department"],
     "type_ms" => $formData["type_ms"],
     "team_ms" => $formData["team_ms"],
-    "propose" => $formData["list_propose"] ?? json_decode($formData["list_propose"]),
+    "propose" => json_decode($formData["list_propose"], true),
   ];
 
   $mailService = new MailService($config);

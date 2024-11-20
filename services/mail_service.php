@@ -22,7 +22,7 @@ class MailService
         $this->emailTemplates = new EmailTemplates( $this->env, $this->config['app_url']);
     }
 
-    public function sendRequestNotification($type = 'request_review', $reviewers, $requestData)
+    public function sendRequestNotification($type = 'review', $reviewers, $requestData)
     {
         try {
             if (!is_array($reviewers)) {
@@ -91,12 +91,12 @@ class MailService
     private function getSubjectByType($type, $requestData)
     {
         $subjects = [
-            'request_review' => "Thông báo yêu cầu xét duyệt mới từ {$requestData['name']}",
-            'request_approved' => "Thông báo yêu cầu đã được phê duyệt",
-            'request_rejected' => "Thông báo yêu cầu đã bị từ chối",
+            'review' => "Thông báo yêu cầu xét duyệt mới từ {$requestData['name']}",
+            'approved' => "Thông báo yêu cầu đã được phê duyệt",
+            'rejected' => "Thông báo yêu cầu đã bị từ chối",
         ];
 
-        return isset($subjects[$type]) ? $subjects[$type] : $subjects['request_review'];
+        return isset($subjects[$type]) ? $subjects[$type] : $subjects['review'];
     }
 
     private function getReviewerEmail($reviewer)

@@ -213,7 +213,7 @@ class ApiService
     private function filterDepartments($departments)
     {
         return array_filter($departments, function ($dept) {
-            return isset($dept['NAME']) && strpos($dept['NAME'], 'MS') === 0;
+            return isset($dept['NAME']) && strpos($dept['NAME'], 'MS') === 0 && $dept['NAME'] !== 'MSA';
         });
     }
 

@@ -47,11 +47,11 @@ try {
     ];
 
     $res = $msSignupList->Update($post["id"], $arFields);
-
+    $reviewerIds = [];
     if ($res) {
         $stage = intval($post["stage_id"]);
         if ($stage === 1) {
-            $reviewerIds = $post["user_id"];
+            $reviewerIds = [$post["user_id"]];
         } else {
             $list = $reviewerStage->GetList([], $arrFields2);
             $reviewerIds = array_column(
@@ -78,7 +78,7 @@ try {
         if (!empty($reviewerIds)) {
             try {
                 $mailResult = $mailService->sendRequestNotification(
-                    "rejection",
+                    "rejected",
                     $reviewerIds,
                     $requestData
                 );

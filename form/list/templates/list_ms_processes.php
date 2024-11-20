@@ -2,147 +2,285 @@
     <h1 style="font-size:25px;margin:10px 0;" class="title-page" v-html="pageTitle"></h1>
 </div>
 <div :class="showFormKPI ? 'overlay active' : 'overlay'" @click="hideOverlay()"></div>
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <span v-html="totalText"></span>
-
-    <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch" />
-</div>
 <div class="list-ms-processes">
-    <el-table
-        v-loading="tableLoading"
-        :data="tableData"
-        max-height="500"
-        style="width: 100%"
-        border default-expand-all>
-        <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
-        <el-table-column prop="user_name" label="Họ và tên" min-width="150">
-            <template #default="scope">
-                <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
-                    {{ scope.row.user_name }}
-                </a>
-            </template>
-        </el-table-column>
-        <el-table-column prop="stage_id" label="Trạng thái" min-width="200">
-            <template #default="scope">
-                <el-steps
-                    :active="scope.row.status === 'error' ? scope.row.stage_id : scope.row.stage_id === scope.row.max_stage && scope.row.status === 'success' ? scope.row.stage_id : scope.row.stage_id - 1"
-                    :finish-status="scope.row.status == 'pending' ? 'success' : scope.row.status"
-                    :class="scope.row.status == 'pending' ? 'success': scope.row.status"
-                    simple>
-                    <template v-for="n in parseInt(scope.row.max_stage)" :key="n">
-                        <el-tooltip
-                            class="item"
-                            effect="dark"
-                            :content="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"
-                            placement="top">
-                            <el-step :title="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"></el-step>
-                        </el-tooltip>
+    <el-tabs v-model="activeName" @tab-click="handleClick">
+        <el-tab-pane label="Chờ xét duyệt" name="pending" class="tab-pane-pending">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <span v-html="totalText"></span>
+                <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch('pending')" />
+            </div>
+            <el-table
+                v-loading="tableLoading"
+                :data="tableData"
+                max-height="500"
+                style="width: 100%"
+                border default-expand-all>
+                <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
+                <el-table-column prop="employee_id" label="Mã nhân viên" min-width="140"></el-table-column>
+                <el-table-column prop="user_name" label="MS" min-width="150">
+                    <template #default="scope">
+                        <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
+                            {{ scope.row.user_name }}
+                        </a>
                     </template>
-                </el-steps>
-            </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="Ngày đăng ký" min-width="200"></el-table-column>
-        <el-table-column prop="user_email" label="Email" min-width="150"></el-table-column>
-        <el-table-column prop="employee_id" label="Mã nhân viên" min-width="140"></el-table-column>
-        <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
-        <el-table-column prop="team_ms" label="Team MS" min-width="150"></el-table-column>
-        <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
-        <el-table-column prop="confirmation" label="Xác nhận và cam kết" min-width="300"></el-table-column>
-        <el-table-column prop="comments" label="Ghi chú" min-width="100"></el-table-column>
-        <el-table-column fixed="right" label="Hành động" min-width="180">
-            <template #default="scope">
-                <div v-if="scope.row.status === 'pending'">
-                    <template v-if="scope.row.reviewers.some(reviewer =>
+                </el-table-column>
+                <el-table-column prop="stage_id" label="Trạng thái" min-width="200">
+                    <template #default="scope">
+                        <el-steps
+                            :active="scope.row.status === 'error' ? scope.row.stage_id : scope.row.stage_id === scope.row.max_stage && scope.row.status === 'success' ? scope.row.stage_id : scope.row.stage_id - 1"
+                            :finish-status="scope.row.status == 'pending' ? 'success' : scope.row.status"
+                            :class="scope.row.status == 'pending' ? 'success': scope.row.status"
+                            simple>
+                            <template v-for="n in parseInt(scope.row.max_stage)" :key="n">
+                                <el-tooltip
+                                    class="item"
+                                    effect="dark"
+                                    :content="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"
+                                    placement="top">
+                                    <el-step :title="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"></el-step>
+                                </el-tooltip>
+                            </template>
+                        </el-steps>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="user_email" label="Email" min-width="150"></el-table-column>
+                <el-table-column prop="created_at" label="Ngày đăng ký" min-width="140"></el-table-column>
+                <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
+                <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
+                <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
+                <el-table-column fixed="right" label="Hành động" min-width="140">
+                    <template #default="scope">
+                        <div v-if="scope.row.status === 'pending'" style="display: flex; gap: 10px; flex-direction: column;">
+                            <template v-if="scope.row.reviewers.some(reviewer =>
                                         reviewer.reviewer_id === parseInt(userId) &&
                                         reviewer.stage_id === parseInt(scope.row.stage_id))">
-                        <template v-if="scope.row.reviewers.find(r =>
+                                <template v-if="scope.row.reviewers.find(r =>
                                             r.stage_id === parseInt(scope.row.stage_id))?.require_kpi">
-                            <template v-if="parseInt(scope.row.user_id) === parseInt(userId) &&
+                                    <template v-if="parseInt(scope.row.user_id) === parseInt(userId) &&
                                                                     parseInt(scope.row.stage_id) === parseInt(scope.row.max_stage)">
-                                <template v-if="!rejectLoading">
-                                    <el-button
-                                        type="primary"
-                                        size="small"
-                                        @click="handleAddKPI(scope.row)">
-                                        Xem KPI
-                                    </el-button>
-                                </template>
-                            </template>
+                                        <template v-if="!rejectLoading">
+                                            <el-button
+                                                type="primary"
+                                                size="small"
+                                                @click="handleAddKPI(scope.row)">
+                                                Xem KPI
+                                            </el-button>
+                                        </template>
+                                    </template>
 
-                            <template v-else>
-                                <template v-if="!rejectLoading">
-                                    <el-button
-                                        type="primary"
-                                        size="small"
-                                        @click="handleAddKPI(scope.row)">
-                                        {{ scope.row.reviewers.find(r =>
+                                    <template v-else>
+                                        <template v-if="!rejectLoading">
+                                            <el-button
+                                                type="primary"
+                                                size="small"
+                                                @click="handleAddKPI(scope.row)">
+                                                {{ scope.row.reviewers.find(r =>
                                             r.stage_id === parseInt(scope.row.stage_id))?.has_kpi? 'Xem KPI' : 'Nhập KPI' }}
+                                            </el-button>
+                                        </template>
+                                    </template>
+                                </template>
+
+                                <template v-else>
+                                    <template v-if="!rejectLoading">
+                                        <el-button
+                                            type="success"
+                                            size="small"
+                                            :loading="approveLoading || loading"
+                                            :disabled="approveLoading"
+                                            @click="handleApprove(scope.row)">
+                                            Xét duyệt
+                                        </el-button>
+                                    </template>
+                                </template>
+
+                                <template v-if="!approveLoading">
+                                    <el-button
+                                        type="danger"
+                                        size="small"
+                                        :loading="rejectLoading || loading"
+                                        :disabled="rejectLoading"
+                                        @click="handleReject(scope.row)">
+                                        Từ chối
                                     </el-button>
                                 </template>
-                            </template>
-                        </template>
 
-                        <template v-else>
-                            <template v-if="!rejectLoading">
+                            </template>
+                            <template v-else>
                                 <el-button
-                                    type="success"
+                                    link
+                                    type="primary"
                                     size="small"
-                                    :loading="approveLoading || loading"
-                                    :disabled="approveLoading"
-                                    @click="handleApprove(scope.row)">
-                                    Xét duyệt
+                                    :disabled="true">
+                                    Đang chờ xét duyệt
                                 </el-button>
                             </template>
-                        </template>
-
-                        <template v-if="!approveLoading">
+                        </div>
+                        <div v-else>
                             <el-button
-                                type="danger"
+                                link
+                                :type="scope.row.status === 'success' ? 'success' : 'danger'"
                                 size="small"
-                                :loading="rejectLoading || loading"
-                                :disabled="rejectLoading"
-                                @click="handleReject(scope.row)">
-                                Từ chối
+                                disabled>
+                                {{ scope.row.status === 'success' ? 'Đã duyệt' : 'Đã từ chối' }}
                             </el-button>
-                        </template>
-
+                        </div>
                     </template>
-                    <template v-else>
+                </el-table-column>
+            </el-table>
+            <div style="margin-top: 20px; position:relative">
+                <el-pagination
+                    background
+                    small
+                    layout="prev, pager, next, sizes"
+                    :total="total"
+                    :page-size="pageSize"
+                    :current-page="currentPage"
+                    :page-sizes="[10, 20, 50, 100]"
+                    @current-change="handlePageChange"
+                    @size-change="handleSizeChange">
+                </el-pagination>
+            </div>
+        </el-tab-pane>
+        <el-tab-pane label="Đã xét duyệt" name="approved" class="tab-pane-approved">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <span v-html="totalText"></span>
+                <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch('approved')" />
+            </div>
+            <el-table
+                v-loading="tableLoading"
+                :data="tableData"
+                max-height="500"
+                style="width: 100%"
+                border default-expand-all>
+                <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
+                <el-table-column prop="employee_id" label="Mã nhân viên" min-width="140"></el-table-column>
+                <el-table-column prop="user_name" label="MS" min-width="150">
+                    <template #default="scope">
+                        <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
+                            {{ scope.row.user_name }}
+                        </a>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="stage_id" label="Trạng thái" min-width="200">
+                    <template #default="scope">
+                        <el-steps
+                            :active="scope.row.status === 'error' ? scope.row.stage_id : scope.row.stage_id === scope.row.max_stage && scope.row.status === 'success' ? scope.row.stage_id : scope.row.stage_id - 1"
+                            :finish-status="scope.row.status == 'pending' ? 'success' : scope.row.status"
+                            :class="scope.row.status == 'pending' ? 'success': scope.row.status"
+                            simple>
+                            <template v-for="n in parseInt(scope.row.max_stage)" :key="n">
+                                <el-tooltip
+                                    class="item"
+                                    effect="dark"
+                                    :content="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"
+                                    placement="top">
+                                    <el-step :title="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"></el-step>
+                                </el-tooltip>
+                            </template>
+                        </el-steps>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="user_email" label="Email" min-width="150"></el-table-column>
+                <el-table-column prop="created_at" label="Ngày đăng ký" min-width="140"></el-table-column>
+                <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
+                <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
+                <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
+                <el-table-column fixed="right" label="Hành động" min-width="120">
+                    <template #default="scope">
                         <el-button
-                            link
                             type="primary"
                             size="small"
-                            :disabled="true">
-                            Đang chờ xét duyệt
+                            @click="handleAddKPI(scope.row)">
+                            Xem KPI
                         </el-button>
                     </template>
-                </div>
-                <div v-else>
-                    <el-button
-                        link
-                        :type="scope.row.status === 'success' ? 'success' : 'danger'"
-                        size="small"
-                        disabled>
-                        {{ scope.row.status === 'success' ? 'Đã duyệt' : 'Đã từ chối' }}
-                    </el-button>
-                </div>
-            </template>
-        </el-table-column>
-    </el-table>
-
-    <div style="margin-top: 20px; position:relative">
-        <el-pagination
-            background
-            small
-            layout="prev, pager, next, sizes"
-            :total="total"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            :page-sizes="[10, 20, 50, 100]"
-            @current-change="handlePageChange"
-            @size-change="handleSizeChange">
-        </el-pagination>
-    </div>
+                </el-table-column>
+            </el-table>
+            <div style="margin-top: 20px; position:relative">
+                <el-pagination
+                    background
+                    small
+                    layout="prev, pager, next, sizes"
+                    :total="total"
+                    :page-size="pageSize"
+                    :current-page="currentPage"
+                    :page-sizes="[10, 20, 50, 100]"
+                    @current-change="handlePageChange"
+                    @size-change="handleSizeChange">
+                </el-pagination>
+            </div>
+        </el-tab-pane>
+        <el-tab-pane label="Đã từ chối" name="rejected" class="tab-pane-rejected">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <span v-html="totalText"></span>
+                <el-input v-model="searchQuery" placeholder="Tìm kiếm..." style="width: 300px;" clearable @input="debouncedSearch('rejected')" />
+            </div>
+            <el-table
+                v-loading="tableLoading"
+                :data="tableData"
+                max-height="500"
+                style="width: 100%"
+                border default-expand-all>
+                <el-table-column prop="id" label="ID" min-width="70"></el-table-column>
+                <el-table-column prop="employee_id" label="Mã nhân viên" min-width="140"></el-table-column>
+                <el-table-column prop="user_name" label="MS" min-width="150">
+                    <template #default="scope">
+                        <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
+                            {{ scope.row.user_name }}
+                        </a>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="stage_id" label="Trạng thái" min-width="200">
+                    <template #default="scope">
+                        <el-steps
+                            :active="scope.row.stage_id"
+                            :finish-status="scope.row.status"
+                            :class="scope.row.status"
+                            simple>
+                            <template v-for="n in parseInt(scope.row.max_stage)" :key="n">
+                                <el-tooltip
+                                    effect="dark"
+                                    :content="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"
+                                    placement="top">
+                                    <el-step :class="n < scope.row.stage_id ? 'customzz' : ''" :title="scope.row.reviewers.find(r => r.stage_id === n)?.stage_label || `Step ${n}`"></el-step>
+                                </el-tooltip>
+                            </template>
+                        </el-steps>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="user_email" label="Email" min-width="150"></el-table-column>
+                <el-table-column prop="created_at" label="Ngày đăng ký" min-width="140"></el-table-column>
+                <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
+                <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
+                <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
+                <el-table-column prop="comments" label="Lý do từ chối" min-width="100"></el-table-column>
+                <el-table-column fixed="right" label="Hành động" min-width="120">
+                    <template #default="scope">
+                        <el-button
+                            type="primary"
+                            size="small"
+                            @click="handleAddKPI(scope.row)">
+                            Xem KPI
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div style="margin-top: 20px; position:relative">
+                <el-pagination
+                    background
+                    small
+                    layout="prev, pager, next, sizes"
+                    :total="total"
+                    :page-size="pageSize"
+                    :current-page="currentPage"
+                    :page-sizes="[10, 20, 50, 100]"
+                    @current-change="handlePageChange"
+                    @size-change="handleSizeChange">
+                </el-pagination>
+            </div>
+        </el-tab-pane>
+    </el-tabs>
 </div>
 
 <div :class="showFormKPI ? 'form-kpi active' : 'form-kpi'">
@@ -182,16 +320,19 @@
                     <span v-html="linkTeamMSText"></span>
                 </a>
             </el-form-item>
+            <el-form-item label="Năm:" prop="year">
+                <span v-html="yearText"></span>
+            </el-form-item>
         </div>
 
         <div class="form-table">
             <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
                 <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
                 <template v-for="month in 12" :key="month">
-                    <el-table-column :prop="'month' + month" :label="'M' + month" min-width="70">
+                    <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                         <template #default="scope">
                             <el-input
-                                :disabled="flag || month <= currMonth"
+                                :disabled="flag && !editFlag || month <= currMonth"
                                 type="number"
                                 size="small"
                                 v-model="scope.row['m' + month]"
@@ -203,22 +344,37 @@
                     </el-table-column>
                 </template>
                 <el-table-column
-                    v-if="!flag"
                     fixed="right"
-                    label="Operations"
+                    label="Hành động"
                     min-width="100">
                     <template #default="scope">
                         <el-button
+                            v-if="!flag && !editFlag"
                             link
                             type="primary"
                             size="small"
                             @click.prevent="deleteRow(scope.$index, scope.row.program)">
-                            Remove
+                            Xoá
                         </el-button>
+
+                        <el-popconfirm
+                            v-else
+                            title="Sửa KPI sẽ cần xét duyệt lại."
+                            @confirm="editRow(scope.$index, scope.row.program)">
+                            <template #reference>
+                                <el-button
+                                    link
+                                    type="primary"
+                                    :disabled="editFlag"
+                                    size="small">
+                                    Chỉnh sửa
+                                </el-button>
+                            </template>
+                        </el-popconfirm>
                     </template>
                 </el-table-column>
             </el-table>
-            <el-select v-if="!flag" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+            <el-select v-if="!flag && !editFlag" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
                 <el-option
                     v-for="program in listProgram"
                     @click="onAddItem(program)"
@@ -229,58 +385,50 @@
             </el-select>
         </div>
 
-        <div class="user_confirm" v-if="form.max_stage === form.stage_id">
+        <div class="user_confirm" v-if="form.max_stage === form.stage_id && form.status === 'pending' && !editFlag">
             <div style="margin-top: 20px;">
                 <el-checkbox v-model="form.agree_kpi">
                     <span v-html="agreeKpiText"></span>
                 </el-checkbox>
             </div>
-            <div v-if="form.list_propose && form.list_propose.length > 0 && form.list_propose[0].trim() !== ''">
-                <el-checkbox v-model="form.received_all">
-                    <span v-html="agreeReceivedText"></span>
-                </el-checkbox>
-                <span v-html="listText"></span>
+        </div>
+        <div v-if="form.status === 'pending' && !editFlag">
+            <div v-if="flag" class="form-btn">
+                <el-form-item>
+                    <el-button
+                        type="primary"
+                        @click="finalSubmit()"
+                        :loading="loading"
+                        :disabled="loading || !isFormValid">
+                        <span v-html="textBtn1"></span>
+                    </el-button>
+                </el-form-item>
+            </div>
+            <div v-else class="form-btn">
+                <el-form-item>
+                    <el-button
+                        type="primary"
+                        @click="submitForm('create and approve')"
+                        :loading="approveLoading"
+                        :disabled="approveLoading">
+                        <span v-html="textBtn2"></span>
+                    </el-button>
+                </el-form-item>
             </div>
         </div>
+        <div v-else>
+            <div class="form-btn">
+                <el-form-item>
+                    <el-button
+                        type="primary"
+                        @click="resendEditKpi()"
+                        :loading=""
+                        :disabled="">
+                        <span v-html="textBtn3"></span>
+                    </el-button>
+                </el-form-item>
+            </div>
 
-        <div v-if="flag" class="form-btn">
-            <el-form-item>
-                <el-button
-                    type="primary"
-                    @click="finalSubmit()"
-                    :loading="loading"
-                    :disabled="loading || !isFormValid">
-                    <span v-html="textBtn1"></span>
-                </el-button>
-            </el-form-item>
-        </div>
-        <div v-else class="form-btn">
-            <el-form-item v-if="form.has_kpi">
-                <el-button
-                    type="primary"
-                    @click="submitForm('approve')"
-                    :loading="approveLoading"
-                    :disabled="approveLoading">
-                    <span v-html="textBtn2"></span>
-                </el-button>
-            </el-form-item>
-
-            <el-form-item v-else>
-                <el-button
-                    type="primary"
-                    @click="submitForm('create kpi')"
-                    :loading="loading"
-                    :disabled="loading || approveLoading">
-                    <span v-html="textBtn3"></span>
-                </el-button>
-                <el-button
-                    type="primary"
-                    @click="submitForm('create and approve')"
-                    :loading="approveLoading"
-                    :disabled="approveLoading || loading">
-                    <span v-html="textBtn4"></span>
-                </el-button>
-            </el-form-item>
         </div>
     </el-form>
 </div>
