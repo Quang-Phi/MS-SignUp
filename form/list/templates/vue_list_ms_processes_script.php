@@ -9,16 +9,23 @@
   const app = createApp({
     setup() {
       const flag = ref(false);
-      const editFlag = ref(false);
+      const editKpiMSA = ref(false);
+      const editKpiHR = ref(false);
       const form = ref({});
       const tableData = ref([]);
-      const tableDataKpi = ref([])
-      const oldDataKpi = ref([])
+      const tableDataKpi = ref([]);
+      const tableDataKpiMSA = ref([]);
+      const tableDataKpiHR = ref([]);
+      const oldDataKpiMSA = ref([]);
+      const oldDataKpiHR = ref([]);
       const showFormKPI = ref(false);
       const createdProgram = ref([]);
+      const createdProgramMSA = ref([]);
+      const createdProgramHR = ref([]);
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const allData = ref([]);
+      const stageDeal = ref([]);
       const currMonth = ref(new Date().getMonth() + 1);
       const currYear = ref(new Date().getFullYear());
       const isEdit = ref(false);
@@ -41,6 +48,7 @@
       const textBtn1 = `Xác nhận`;
       const textBtn2 = `Xét duyệt`;
       const textBtn3 = `Gửi yêu cầu`;
+      const textBtn4 = `Điều chỉnh KPI`;
       const yearText = computed(() => {
         return `<span>${currYear.value}</span>`
       })
@@ -246,36 +254,102 @@
         }
       };
 
-      const deleteRow = (index, program) => {
-        tableDataKpi.value.splice(index, 1)
-        createdProgram.value.splice(createdProgram.value.indexOf(program), 1)
+      const deleteRow = (index, program, table = null) => {
+        switch (table) {
+          case 'MSA':
+            tableDataKpiMSA.value.splice(index, 1)
+            createdProgramMSA.value.splice(createdProgramMSA.value.indexOf(program), 1)
+            break;
+          case 'HR':
+            tableDataKpiHR.value.splice(index, 1)
+            createdProgramHR.value.splice(createdProgramHR.value.indexOf(program), 1)
+            break;
+          default:
+            tableDataKpi.value.splice(index, 1)
+            createdProgram.value.splice(createdProgram.value.indexOf(program), 1)
+            break;
+        }
       }
 
-      const editRow = () => {
+      const changeKpi = (proposer) => {
         flag.value = false;
-        editFlag.value = true;
-        oldDataKpi.value = tableDataKpi.value.map(row => ({
-          ...row
-        }));
-      }
-      const onAddItem = (program) => {
-        if (!createdProgram.value.includes(program)) {
-          createdProgram.value.push(program)
-          const newRow = {
-            program: program,
-          };
-          for (let i = 1; i <= 12; i++) {
-            newRow[`m${i}`] = '';
-          }
-          tableDataKpi.value.push(newRow);
-        } else {
-          ElementPlus.ElNotification({
-            message: 'Chương trình này đã được tạo!',
-            type: 'warning',
-            duration: 2000,
-            position: 'top-right'
-          });
+        switch (proposer.label) {
+          case 'MSA':
+            oldDataKpiMSA.value = tableDataKpiMSA.value.map(row => ({
+              ...row
+            }));
+            editKpiMSA.value = true;
+            break;
+          case 'HR':
+            oldDataKpiHR.value = tableDataKpiHR.value.map(row => ({
+              ...row
+            }))
+            editKpiHR.value = true;
+            break;
         }
+        stageDeal.value.includes(proposer.stage_id) ? '' : stageDeal.value.push(proposer.stage_id);
+      }
+
+      const onAddItem = (program, table) => {
+        switch (table) {
+          case 'MSA':
+            if (!createdProgramMSA.value.includes(program)) {
+              createdProgramMSA.value.push(program)
+              const newRow = {
+                program: program,
+              };
+              for (let i = 1; i <= 12; i++) {
+                newRow[`m${i}`] = '';
+              }
+              tableDataKpiMSA.value.push(newRow);
+            } else {
+              ElementPlus.ElNotification({
+                message: 'Chương trình này đã được tạo!',
+                type: 'warning',
+                duration: 2000,
+                position: 'top-right'
+              });
+            }
+            break;
+          case 'HR':
+            if (!createdProgramHR.value.includes(program)) {
+              createdProgramHR.value.push(program)
+              const newRow = {
+                program: program,
+              };
+              for (let i = 1; i <= 12; i++) {
+                newRow[`m${i}`] = '';
+              }
+              tableDataKpiHR.value.push(newRow);
+            } else {
+              ElementPlus.ElNotification({
+                message: 'Chương trình này đã được tạo!',
+                type: 'warning',
+                duration: 2000,
+                position: 'top-right'
+              });
+            }
+            break;
+          default:
+            if (!createdProgram.value.includes(program)) {
+              createdProgram.value.push(program)
+              const newRow = {
+                program: program,
+              };
+              for (let i = 1; i <= 12; i++) {
+                newRow[`m${i}`] = '';
+              }
+              tableDataKpi.value.push(newRow);
+            } else {
+              ElementPlus.ElNotification({
+                message: 'Chương trình này đã được tạo!',
+                type: 'warning',
+                duration: 2000,
+                position: 'top-right'
+              });
+            }
+        }
+
       }
 
       const handleAddKPI = async (rowData) => {
@@ -284,11 +358,11 @@
           document.body.style.overflow = 'hidden';
         }
         const stageInfo = rowData.reviewers.find(reviewer => reviewer.stage_id.toString() === rowData.stage_id);
-        const stageLabel = stageInfo ? stageInfo.stage_label : '';
         const hasKpi = stageInfo ? stageInfo.has_kpi : '';
+        const stageLabel = stageInfo ? stageInfo.stage_label : '';
         form.value = {
-          stage: stageLabel,
           status: rowData.status,
+          stage: stageLabel,
           stage_id: rowData.stage_id,
           max_stage: rowData.max_stage,
           list_propose: rowData.list_propose.split(', '),
@@ -320,9 +394,14 @@
           flag.value = true;
           await getListProposer();
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
-          form.value.proposer_id = listProposer.value[0]?.stage_id;
-          tableDataKpi.value = [];
-          await getUserKpi(rowData.id, rowData.user_id, form.value.proposer_id);
+          const promises = listProposer.value.map(element => {
+            if (element.label == 'MSA') {
+              return getUserKpi(rowData.id, rowData.user_id, element.stage_id, element.label);
+            } else if (element.label == 'HR') {
+              return getUserKpi(rowData.id, rowData.user_id, element.stage_id, element.label);
+            }
+          });
+          await Promise.all(promises);
         }
       }
 
@@ -331,7 +410,7 @@
       });
 
       const getTableDataKpi = async (ms_list_id, user_id, stage_id) => {
-        await getUserKpi(ms_list_id, user_id, stage_id);
+        await getUserKpi(ms_list_id, user_id, stage_id, tableDataKpi);
       }
 
       const getListProposer = async () => {
@@ -350,8 +429,20 @@
         }
       }
 
-      const getUserKpi = async (ms_list_id, user_id, stage_id) => {
-        tableDataKpi.value = [];
+      const getUserKpi = async (ms_list_id, user_id, stage_id, type = "main") => {
+        let baseTable = [];
+        switch (type) {
+          case 'main':
+            baseTable = tableDataKpi;
+            break;
+          case 'MSA':
+            baseTable = tableDataKpiMSA;
+            break;
+          case 'HR':
+            baseTable = tableDataKpiHR;
+            break;
+        }
+        baseTable.value = [];
         try {
           const response = await axios.get(`../../api/get_user_kpi.php`, {
             params: {
@@ -371,21 +462,31 @@
                   for (let i = 1; i <= 12; i++) {
                     newRow[`m${i}`] = element[`m${i}`];
                   }
-                  tableDataKpi.value.push(newRow);
+                  baseTable.value.push(newRow);
                 }
               });
 
             });
-            tableDataKpi.value.forEach(element => {
-              createdProgram.value.push(element.program);
+            baseTable.value.forEach(element => {
+              switch (type) {
+                case 'main':
+                  createdProgram.value.push(element.program);
+                  break;
+                case 'MSA':
+                  createdProgramMSA.value.push(element.program);
+                  break;
+                case 'HR':
+                  createdProgramHR.value.push(element.program);
+                  break;
+              }
             });
           } else {
             console.error('API Error:', data.message);
-            tableDataKpi.value = [];
+            baseTable.value = [];
           }
         } catch (error) {
           console.error('Error fetching:', error);
-          tableDataKpi.value = [];
+          baseTable.value = [];
         }
       }
 
@@ -538,6 +639,68 @@
         return true;
       };
 
+      const validateTableKpiMSAData = () => {
+        if (tableDataKpiMSA.value.length === 0) {
+          return "Vui lòng nhập KPI cho ít nhất 1 chương trình tại bảng KPI MSA";
+        }
+        const list = [];
+        for (let i = 0; i < tableDataKpiMSA.value.length; i++) {
+          const row = tableDataKpiMSA.value[i];
+
+          let hasData = false;
+          for (let j = 1; j <= 12; j++) {
+            if (row[`m${j}`] !== "" && row[`m${j}`] > 0) {
+              hasData = true;
+              break;
+            }
+          }
+
+          if (!hasData) {
+            list.push(row.program);
+          }
+        }
+        if (list.length > 0) {
+          if (list.length === 1) {
+            return `Vui lòng nhập KPI cho chương trình ${list[0]} tại bảng KPI MSA là số nguyên dương`;
+          } else {
+            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} tại bảng KPI MSA là số nguyên dương`;
+          }
+        }
+
+        return true;
+      };
+
+      const validateTableKpiHRData = () => {
+        if (tableDataKpiHR.value.length === 0) {
+          return "Vui lòng nhập KPI cho ít nhất 1 chương trình tại bảng KPI HR";
+        }
+        const list = [];
+        for (let i = 0; i < tableDataKpiHR.value.length; i++) {
+          const row = tableDataKpiHR.value[i];
+
+          let hasData = false;
+          for (let j = 1; j <= 12; j++) {
+            if (row[`m${j}`] !== "" && row[`m${j}`] > 0) {
+              hasData = true;
+              break;
+            }
+          }
+
+          if (!hasData) {
+            list.push(row.program);
+          }
+        }
+        if (list.length > 0) {
+          if (list.length === 1) {
+            return `Vui lòng nhập KPI cho chương trình ${list[0]} tại bảng KPI HR là số nguyên dương`;
+          } else {
+            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} tại bảng KPI HR là số nguyên dương`;
+          }
+        }
+
+        return true;
+      };
+
       const finalSubmit = async () => {
         try {
           loading.value = true;
@@ -608,14 +771,30 @@
         }
       };
 
-      const resendEditKpi = async () => {
-        form.value.old_kpi = oldDataKpi.value;
-        form.value.stage_id = form.value.proposer_id;
+      const handleDealKpi = async () => {
+        form.value.stage_deal = JSON.stringify(stageDeal.value);
+        form.value.kpi_hr = JSON.stringify(tableDataKpiHR.value);
+        form.value.kpi_msa = JSON.stringify(tableDataKpiMSA.value);
+        form.value.old_kpi_hr = JSON.stringify(oldDataKpiHR.value);
+        form.value.old_kpi_msa = JSON.stringify(oldDataKpiMSA.value);
+        if (validateTableKpiMSAData() !== true) {
+          ElementPlus.ElMessage({
+            message: validateTableKpiMSAData(),
+            type: 'error'
+          })
+          return;
+        }
+        if (validateTableKpiHRData() !== true) {
+          ElementPlus.ElMessage({
+            message: validateTableKpiHRData(),
+            type: 'error'
+          })
+          return;
+        }
         try {
           await handleCreateKpi(false);
           const params = {
             id: form.value.ms_list_id,
-            stage_id: form.value.stage_id,
             user_name: form.value.user_name,
             user_email: form.value.user_email,
             employee_id: form.value.employee_id,
@@ -623,8 +802,8 @@
             type_ms: form.value.type_ms,
             team_ms: form.value.team_ms,
             propose: form.value.list_propose,
-            process_deal: [],
-            change_kpi: true
+            max_stage: form.value.max_stage,
+            stage_deal: JSON.stringify(stageDeal.value),
           };
           await handleApprove(null, params);
 
@@ -635,6 +814,7 @@
           });
         }
       }
+
       onMounted(async () => {
         await getMsSignupList(0, arFilter = {
           status: 'pending'
@@ -687,6 +867,8 @@
         userId,
         tableData,
         tableDataKpi,
+        tableDataKpiMSA,
+        tableDataKpiHR,
         listProposer,
         handleApprove,
         handleReject,
@@ -701,7 +883,6 @@
         urlUserInfo,
         isEdit,
         urlTeamMSInfo,
-        getTableDataKpi,
         flag,
         currMonth,
         rejectLoading,
@@ -725,6 +906,7 @@
         textBtn1,
         textBtn2,
         textBtn3,
+        textBtn4,
         listText,
         linkProposerText,
         linkTeamMSText,
@@ -732,9 +914,10 @@
         activeName,
         handleClick,
         yearText,
-        editRow,
-        editFlag,
-        resendEditKpi
+        changeKpi,
+        editKpiMSA,
+        editKpiHR,
+        handleDealKpi
       }
     }
   });

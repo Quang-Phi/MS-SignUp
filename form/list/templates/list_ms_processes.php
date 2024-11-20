@@ -292,109 +292,121 @@
         </div>
     </div>
     <el-form :model="form" :rules="rules" ref="ruleFormRef" label-width="auto" style="margin-top: 32px;">
-        <div class="form-control">
-            <el-form-item label="Người đề nghị KPI:" prop="stage">
-                <template v-if="form.stage_id != form.max_stage">
-                    <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == form.stage_id).reviewer_id}/`" target="_blank">
-                        {{ form.stage }}
+        <div class="form-wrapper" v-if="form.stage_id == form.max_stage">
+            <div class="form-control">
+                <el-form-item label="Người nhận KPI:" prop="user_name">
+                    <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
+                        <span v-html="linkProposerText"></span>
                     </a>
-                </template>
-                <template v-else>
-                    <el-select v-model="form.proposer_id" placeholder="Select">
-                        <el-option
-                            v-for="proposer in listProposer"
-                            :key="proposer.stage_id"
-                            :label="proposer.label"
-                            :value="proposer.stage_id"
-                            @click="getTableDataKpi(form.ms_list_id, form.user_id, proposer.stage_id)" />
-                    </el-select>
-                </template>
-            </el-form-item>
-            <el-form-item label="Người nhận KPI:" prop="user_name">
-                <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
-                    <span v-html="linkProposerText"></span>
-                </a>
-            </el-form-item>
-            <el-form-item label="Nhóm MS:" prop="team_ms">
-                <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
-                    <span v-html="linkTeamMSText"></span>
-                </a>
-            </el-form-item>
-            <el-form-item label="Năm:" prop="year">
-                <span v-html="yearText"></span>
-            </el-form-item>
-        </div>
+                </el-form-item>
 
-        <div class="form-table">
-            <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
-                <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
-                <template v-for="month in 12" :key="month">
-                    <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
-                        <template #default="scope">
-                            <el-input
-                                :disabled="flag && !editFlag || month <= currMonth"
-                                type="number"
-                                size="small"
-                                v-model="scope.row['m' + month]"
-                                @input="(event) => handleInputChange(scope.$index, month, event)"
-                                placeholder="0"
-                                :min="1">
-                            </el-input>
+                <el-form-item label="Nhóm MS:" prop="team_ms">
+                    <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
+                        <span v-html="linkTeamMSText"></span>
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Năm:" prop="year">
+                    <span v-html="yearText"></span>
+                </el-form-item>
+            </div>
+
+            <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
+                <el-form-item label="Người đề nghị KPI:" prop="stage">
+                    <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == proposer.stage_id).reviewer_id}/`" target="_blank">
+                        {{ form.reviewers.find(reviewer => reviewer.stage_id.toString() === proposer.stage_id)?.stage_label }}
+                    </a>
+                </el-form-item>
+                <div class="form-table">
+                    <el-table :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR" border style="width: 100%" max-height="500">
+                        <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
+                        <template v-for="month in 12" :key="month">
+                            <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
+                                <template #default="scope">
+                                    <el-input
+                                        :disabled="proposer.stage_id == 3 ? !editKpiMSA || month <= currMonth : !editKpiHR || month <= currMonth"
+                                        type="number"
+                                        size="small"
+                                        v-model="scope.row['m' + month]"
+                                        @input="(event) => handleInputChange(scope.$index, month, event)"
+                                        placeholder="0"
+                                        :min="1">
+                                    </el-input>
+                                </template>
+                            </el-table-column>
                         </template>
-                    </el-table-column>
-                </template>
-                <el-table-column
-                    fixed="right"
-                    label="Hành động"
-                    min-width="100">
-                    <template #default="scope">
-                        <el-button
-                            v-if="!flag && !editFlag"
-                            link
-                            type="primary"
-                            size="small"
-                            @click.prevent="deleteRow(scope.$index, scope.row.program)">
-                            Xoá
-                        </el-button>
-
-                        <el-popconfirm
-                            v-else
-                            title="Sửa KPI sẽ cần xét duyệt lại."
-                            @confirm="editRow(scope.$index, scope.row.program)">
-                            <template #reference>
+                        <el-table-column
+                            v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR"
+                            fixed="right"
+                            label="Hành động"
+                            min-width="100">
+                            <template #default="scope">
                                 <el-button
                                     link
                                     type="primary"
-                                    :disabled="editFlag"
-                                    size="small">
-                                    Chỉnh sửa
+                                    size="small"
+                                    @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
+                                    Xoá
                                 </el-button>
                             </template>
-                        </el-popconfirm>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <el-select v-if="!flag && !editFlag" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
-                <el-option
-                    v-for="program in listProgram"
-                    @click="onAddItem(program)"
-                    :key="program"
-                    :label="program"
-                    :value="program">
-                </el-option>
-            </el-select>
-        </div>
+                        </el-table-column>
+                    </el-table>
+                    <el-select v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                        <el-option
+                            v-for="program in listProgram"
+                            @click="onAddItem(program, proposer.label)"
+                            :key="program"
+                            :label="program"
+                            :value="program">
+                        </el-option>
+                    </el-select>
+                </div>
+                <el-form-item class="change-kpi_btn">
+                    <el-button
+                        type="primary"
+                        @click="changeKpi(proposer)"
+                        :loading=""
+                        :disabled="">
+                        <span v-html="textBtn4"></span>
+                    </el-button>
+                </el-form-item>
 
-        <div class="user_confirm" v-if="form.max_stage === form.stage_id && form.status === 'pending' && !editFlag">
-            <div style="margin-top: 20px;">
+                <div class="timeline-collapse">
+                    <el-collapse v-model="activeNames" @change="handleChange">
+                        <el-collapse-item title="Lịch sử thay đổi" name="1">
+                            <el-timeline style="max-width: 600px">
+                                <el-timeline-item timestamp="2018/4/12" placement="top">
+                                    <el-card>
+                                        <h4>Update Github template</h4>
+                                        <p>Tom committed 2018/4/12 20:46</p>
+                                    </el-card>
+                                </el-timeline-item>
+                                <el-timeline-item timestamp="2018/4/3" placement="top">
+                                    <el-card>
+                                        <h4>Update Github template</h4>
+                                        <p>Tom committed 2018/4/3 20:46</p>
+                                    </el-card>
+                                </el-timeline-item>
+                                <el-timeline-item timestamp="2018/4/2" placement="top">
+                                    <el-card>
+                                        <h4>Update Github template</h4>
+                                        <p>Tom committed 2018/4/2 20:46</p>
+                                    </el-card>
+                                </el-timeline-item>
+                            </el-timeline>
+                        </el-collapse-item>
+                    </el-collapse>
+                </div>
+            </div>
+            <div class="user_confirm" v-if="!editKpiMSA && !editKpiHR">
                 <el-checkbox v-model="form.agree_kpi">
+                    Tôi đồng ý với các KPI được phân công ở bảng trên
                     <span v-html="agreeKpiText"></span>
                 </el-checkbox>
             </div>
-        </div>
-        <div v-if="form.status === 'pending' && !editFlag">
-            <div v-if="flag" class="form-btn">
-                <el-form-item>
+
+            <div class="form-btn">
+                <el-form-item v-if="!editKpiMSA && !editKpiHR">
                     <el-button
                         type="primary"
                         @click="finalSubmit()"
@@ -403,8 +415,84 @@
                         <span v-html="textBtn1"></span>
                     </el-button>
                 </el-form-item>
+
+                <el-form-item v-else>
+                    <el-button
+                        type="primary"
+                        @click="handleDealKpi()"
+                        :loading="loading"
+                        :disabled="loading">
+                        <span v-html="textBtn1"></span>
+                    </el-button>
+                </el-form-item>
             </div>
-            <div v-else class="form-btn">
+        </div>
+        <div class="form-wrapper-x" v-else>
+            <div class="form-control">
+                <el-form-item label="Người đề nghị KPI:" prop="stage">
+                    <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == form.stage_id).reviewer_id}/`" target="_blank">
+                        {{ form.stage }}
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Người nhận KPI:" prop="user_name">
+                    <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
+                        <span v-html="linkProposerText"></span>
+                    </a>
+                </el-form-item>
+                <el-form-item label="Nhóm MS:" prop="team_ms">
+                    <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
+                        <span v-html="linkTeamMSText"></span>
+                    </a>
+                </el-form-item>
+                <el-form-item label="Năm:" prop="year">
+                    <span v-html="yearText"></span>
+                </el-form-item>
+            </div>
+            <div class="form-table">
+                <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
+                    <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
+                    <template v-for="month in 12" :key="month">
+                        <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
+                            <template #default="scope">
+                                <el-input
+                                    :disabled="month <= currMonth"
+                                    type="number"
+                                    size="small"
+                                    v-model="scope.row['m' + month]"
+                                    @input="(event) => handleInputChange(scope.$index, month, event)"
+                                    placeholder="0"
+                                    :min="1">
+                                </el-input>
+                            </template>
+                        </el-table-column>
+                    </template>
+                    <el-table-column
+                        fixed="right"
+                        label="Hành động"
+                        min-width="100">
+                        <template #default="scope">
+                            <el-button
+                                link
+                                type="primary"
+                                size="small"
+                                @click.prevent="deleteRow(scope.$index, scope.row.program)">
+                                Xoá
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <el-select class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                    <el-option
+                        v-for="program in listProgram"
+                        @click="onAddItem(program)"
+                        :key="program"
+                        :label="program"
+                        :value="program">
+                    </el-option>
+                </el-select>
+            </div>
+            <div class="form-btn">
                 <el-form-item>
                     <el-button
                         type="primary"
@@ -416,19 +504,6 @@
                 </el-form-item>
             </div>
         </div>
-        <div v-else>
-            <div class="form-btn">
-                <el-form-item>
-                    <el-button
-                        type="primary"
-                        @click="resendEditKpi()"
-                        :loading=""
-                        :disabled="">
-                        <span v-html="textBtn3"></span>
-                    </el-button>
-                </el-form-item>
-            </div>
 
-        </div>
     </el-form>
 </div>

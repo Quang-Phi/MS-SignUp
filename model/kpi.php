@@ -58,7 +58,7 @@ class Kpi extends CDBResult
     public function Update($id, $arFields)
     {
         $this->db->Query("UPDATE " . $this->QUERY_TABLE . " SET " . $this->GetSQLSetFields($arFields) . " WHERE " . self::ID_FIELD . " = '$id'");
-        return true;
+        return $this->GetById($id);
     }
 
     private function GetSQLSetFields($arFields)

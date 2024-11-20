@@ -28,8 +28,6 @@ class MsSignupList extends CDBResult
     }
     $check ? $admin = $USER->IsAdmin() : $admin = true;
 
-
-
     $searchQuery = isset($arOptions['search']) ? trim($arOptions['search']) : '';
     $searchQuery = $this->db->ForSQL($searchQuery);
 
@@ -100,6 +98,7 @@ class MsSignupList extends CDBResult
         $baseQuery .= " WHERE " . implode(" AND ", $whereParts);
       }
     }
+
     if ($admin) {
       $totalQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as total_query";
       try {
@@ -112,7 +111,7 @@ class MsSignupList extends CDBResult
     } else {
       $total = $this->getTotalCount($baseQuery);
     }
-
+    
     if (!empty($arOrder)) {
       if ($admin) {
         $tableAlias = (!$admin && !empty($whereParts)) ? 'filtered_msl' : 'msl';
@@ -131,6 +130,7 @@ class MsSignupList extends CDBResult
         $baseQuery = "SELECT * FROM ($baseQuery) AS temp_table ORDER BY " . implode(", ", $orderParts);
       }
     }
+
     if (!empty($arOptions['limit'])) {
       $limit = intval($arOptions['limit']);
       $baseQuery .= " LIMIT $limit";
@@ -140,6 +140,7 @@ class MsSignupList extends CDBResult
         $baseQuery .= " OFFSET $offset";
       }
     }
+
     try {
       $dbRes = $this->db->Query($baseQuery);
       $arResult = array();
@@ -158,19 +159,39 @@ class MsSignupList extends CDBResult
     }
   }
 
+  // private function getTotalCount($baseQuery)
+  // {
+  //   try {
+  //     $modifiedQuery = str_replace("SELECT msl.*", "SELECT msl.id", $baseQuery);
+  //     $countQuery = "SELECT COUNT(*) as total FROM (
+  //           $modifiedQuery
+  //       ) as combined_results";
+
+  //     $totalRes = $this->db->Query($countQuery);
+  //     if (!$totalRes) {
+  //       return 0;
+  //     }
+
+  //     $total = $totalRes->Fetch();
+  //     return $total ?: 0;
+  //   } catch (Exception $e) {
+  //     error_log("Error in total count query: " . $e->getMessage());
+  //     return 0;
+  //   }
+  // }
+
   private function getTotalCount($baseQuery)
   {
     try {
-      $modifiedQuery = str_replace("SELECT msl.*", "SELECT msl.id", $baseQuery);
       $countQuery = "SELECT COUNT(*) as total FROM (
-            $modifiedQuery
-        ) as combined_results";
-
+        $baseQuery
+      ) as combined_results";
+  
       $totalRes = $this->db->Query($countQuery);
       if (!$totalRes) {
         return 0;
       }
-
+  
       $total = $totalRes->Fetch();
       return $total ?: 0;
     } catch (Exception $e) {
