@@ -147,6 +147,10 @@
   margin-bottom: 0 !important;
 }
 
+.kpi_item + .kpi_item {
+  margin-top: 16px;
+}
+
 .change-kpi_btn{
   margin-top: 16px;
   display: flex;

@@ -25,6 +25,12 @@
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const allData = ref([]);
+      const count = ref({});
+      const noMore = ref({});
+      const timelineData = ref({});
+      const timelineLoading = ref(false);
+      const activeNames = ref(['1']);
+      const hasTimeline = ref(true);
       const stageDeal = ref([]);
       const currMonth = ref(new Date().getMonth() + 1);
       const currYear = ref(new Date().getFullYear());
@@ -76,6 +82,91 @@
                 </ul>
             </div>`;
       });
+
+      const handleChange = (val, stageId) => {
+        activeNames.value = val;
+        if (val.includes(stageId)) {
+          if (!timelineData.value[stageId] || timelineData.value[stageId].length === 0) {
+            load(stageId);
+          }
+        }
+      }
+
+      const toRaw = (value) => {
+        if (value && typeof value === 'object' && value.hasOwnProperty('__v_raw')) {
+          return value.__v_raw;
+        }
+        return value;
+      };
+
+      const load = async (stageId) => {
+        if (loading.value || (noMore.value[stageId])) return;
+        loading.value = true;
+
+        try {
+          if (!timelineData.value[stageId]) {
+            timelineData.value[stageId] = [];
+          }
+          if (!count.value[stageId]) {
+            count.value[stageId] = 0;
+          }
+
+          const response = await axios.get('../../api/get_list_modified_kpi.php', {
+            params: {
+              stage_id: stageId,
+              ms_list_id: form.value.ms_list_id,
+              user_id: form.value.user_id,
+              offset: count.value[stageId],
+              limit: 3
+            }
+          });
+
+          if (response.data.success) {
+            const currentData = timelineData.value[stageId].map(item => {
+              const rawItem = toRaw(item);
+              return {
+                ...rawItem,
+                tableData: rawItem.kpi_data || [],
+                timestamp: rawItem.timestamp
+              };
+            });
+
+            const newData = response.data.data.map(item => ({
+              ...item,
+              tableData: item.kpi_data || [],
+              timestamp: item.timestamp
+            }));
+
+            timelineData.value[stageId] = [...currentData, ...newData];
+            count.value[stageId] += newData.length;
+            noMore.value[stageId] = count.value[stageId] >= response.data.total;
+          }
+        } catch (error) {
+          console.error('Error loading timeline data:', error);
+          ElementPlus.ElMessage({
+            message: 'Có lỗi xảy ra khi tải dữ liệu',
+            type: 'error'
+          });
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const resetTimeline = (stageId) => {
+        timelineData.value[stageId] = [];
+        count.value[stageId] = 0;
+        noMore.value[stageId] = false;
+      };
+
+      const disabled = computed(() => {
+        return (stageId) => {
+          return loading.value || noMore.value[stageId];
+        };
+      });
+
+      const isDisabled = (stageId) => {
+        return loading.value || noMore.value[stageId];
+      };
 
       const debounce = (fn, delay) => {
         let timeout;
@@ -380,6 +471,7 @@
           team_ms_id: rowData.team_ms_id,
           has_kpi: hasKpi,
           reviewers: rowData.reviewers,
+          process_deal: rowData.process_deal,
           agree_kpi: false,
           received_all: false,
           year: currMonth.value === 12 ? currYear.value + 1 : currYear.value,
@@ -575,7 +667,6 @@
 
       const handleCreateKpi = async ($flag = true) => {
         try {
-
           if (!$flag) {
             loading.value = $flag;
             approveLoading.value = true;
@@ -734,6 +825,13 @@
         if (!loading.value && !approveLoading.value) {
           showFormKPI.value = false;
           document.body.style.overflow = 'auto';
+          editKpiHR.value = false;
+          editKpiMSA.value = false;
+          isEdit.value = false;
+          activeNames.value = [];
+          listProposer.value.forEach((item) => {
+            resetTimeline(item.stage_id);
+          });
         }
       }
 
@@ -843,23 +941,10 @@
           });
           return;
         }
-        switch ($type) {
-          case 'approve':
-            if (isEdit.value) {
-              await handleCreateKpi();
-            }
-            await handleApprove($data);
-            break;
-          case 'create kpi':
-            await handleCreateKpi();
-            break;
-          case 'create and approve':
-            await handleCreateKpi(false);
-            await handleApprove($data);
-            break;
-          default:
-            console.error('Invalid type:', $type);
+        if (isEdit.value) {
+          await handleCreateKpi();
         }
+        await handleApprove($data);
 
       };
 
@@ -917,7 +1002,16 @@
         changeKpi,
         editKpiMSA,
         editKpiHR,
-        handleDealKpi
+        handleDealKpi,
+        count,
+        noMore,
+        timelineData,
+        timelineLoading,
+        activeNames,
+        hasTimeline,
+        load,
+        handleChange,
+        isDisabled
       }
     }
   });
