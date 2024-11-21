@@ -24,7 +24,6 @@
       const createdProgramHR = ref([]);
       const selectedProgram = ref('');
       const listProposer = ref([]);
-      const allData = ref([]);
       const count = ref({});
       const noMore = ref({});
       const timelineData = ref({});
@@ -33,10 +32,12 @@
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
       // const currMonth = ref(new Date().getMonth() + 1);
-      const currMonth = ref(12);
       // const currYear = ref(new Date().getFullYear());
-      const currYear = ref(currMonth.value === 12 ? new Date().getFullYear() + 1 : new Date().getFullYear());
-      // currMonth.value === 12 ? currYear.value + 1 : 
+      const currMonth = ref(11);
+      const currYear = ref(2024);
+      // const currMonth = ref(1);
+      // const currYear = ref(2025);
+      const nextYear = ref(new Date().getFullYear() + 1);
       const isEdit = ref(false);
       const loading = ref(false);
       const tableLoading = ref(false);
@@ -61,7 +62,7 @@
       const textBtn3 = `Gửi yêu cầu`;
       const textBtn4 = `Điều chỉnh KPI`;
       const yearText = computed(() => {
-        return `<span>${currYear.value}</span>`
+        return `<span>${currMonth.value === 12 ? nextYear.value : currYear.value}</span>`
       })
       const totalText = computed(() => {
         return `<span>TỔNG:</span>
@@ -488,21 +489,26 @@
           team_ms_id: rowData.team_ms_id,
           has_kpi: hasKpi,
           reviewers: rowData.reviewers,
-          process_deal: rowData.process_deal,
+          stage_deal: rowData.process_deal,
           agree_kpi: false,
           received_all: false,
           year: currYear.value,
+          next_year: nextYear.value,
+          curr_month: currMonth.value,
           kpi: ''
         };
 
         if (hasKpi) {
           tableDataKpi.value = [];
-          await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id);
+          if (currMonth.value < 12) {
+            await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id);
+          }
         }
         if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
           flag.value = true;
           await getListProposer();
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
+
           const promises = listProposer.value.map(element => {
             if (element.label == 'MSA') {
               return getUserKpi(rowData.id, rowData.user_id, element.stage_id, element.label);
@@ -510,7 +516,20 @@
               return getUserKpi(rowData.id, rowData.user_id, element.stage_id, element.label);
             }
           });
-          await Promise.all(promises);
+          const responses = await Promise.all(promises);
+
+          // if (currMonth.value === 12) {
+          //   listProposer.value.forEach(element => {
+          //     if (element.label == 'MSA') {
+          //       responses[0].length < 0 ? changeKpi(element) : null
+          //     } else if (element.label == 'HR') {
+          //       responses[1].length < 0 ? changeKpi(element) : null
+          //     }
+          //     changeKpi(element);
+          //   })
+
+          // }
+          // handleDealKpi(true);
         }
       }
 
@@ -558,7 +577,7 @@
               ms_list_id: ms_list_id,
               user_id: user_id,
               stage_id: stage_id,
-              year: form.value.status !== 'error' ? currYear.value : null
+              year: currMonth.value === 12 ? nextYear.value : currYear.value
             }
           });
           const data = response.data;
@@ -590,6 +609,7 @@
                   break;
               }
             });
+            return data.data;
           } else {
             console.error('API Error:', data.message);
             baseTable.value = [];
@@ -678,9 +698,33 @@
         return pagination;
       });
 
-      const handleInputChange = (index, month, value) => {
+      const handleInputChange = (index, month, value, proposer) => {
         isEdit.value = true;
-        tableDataKpi.value[index][`m${month}`] = value;
+
+        if (proposer) {
+          switch (proposer.label) {
+            case 'MSA':
+              if (!tableDataKpiMSA.value[index]) {
+                tableDataKpiMSA.value[index] = {};
+              }
+              tableDataKpiMSA.value[index][`m${month}`] = value;
+              console.log(tableDataKpiMSA.value);
+              break;
+            case 'HR':
+              if (!tableDataKpiHR.value[index]) {
+                tableDataKpiHR.value[index] = {};
+              }
+              tableDataKpiHR.value[index][`m${month}`] = value;
+              break;
+            default:
+              break;
+          }
+        } else {
+          if (!tableDataKpi.value[index]) {
+            tableDataKpi.value[index] = {};
+          }
+          tableDataKpi.value[index][`m${month}`] = value;
+        }
       }
 
       const handleCreateKpi = async ($flag = true) => {
@@ -847,6 +891,7 @@
           editKpiMSA.value = false;
           isEdit.value = false;
           activeNames.value = [];
+          stageDeal.value = [];
           listProposer.value.forEach((item) => {
             resetTimeline(item.stage_id);
           });
@@ -854,7 +899,7 @@
       }
 
       const checkDisabled = (month) => {
-        if (month <= currMonth.value && form.value.year === currYear.value) {
+        if (month <= currMonth.value && form.value.year === (currMonth.value === 12 ? nextYear.value : currYear.value)) {
           return true;
         }
         return false;
@@ -887,12 +932,13 @@
         }
       };
 
-      const handleDealKpi = async () => {
+      const handleDealKpi = async ($reset = false) => {
         form.value.stage_deal = JSON.stringify(stageDeal.value);
         form.value.kpi_hr = JSON.stringify(tableDataKpiHR.value);
         form.value.kpi_msa = JSON.stringify(tableDataKpiMSA.value);
         form.value.old_kpi_hr = JSON.stringify(oldDataKpiHR.value);
         form.value.old_kpi_msa = JSON.stringify(oldDataKpiMSA.value);
+
         if (validateTableKpiMSAData() !== true) {
           ElementPlus.ElMessage({
             message: validateTableKpiMSAData(),
@@ -906,6 +952,10 @@
             type: 'error'
           })
           return;
+        }
+        if ($reset) {
+          form.value.kpi_hr = [];
+          form.value.kpi_msa = [];
         }
         try {
           await handleCreateKpi(false);
@@ -935,10 +985,10 @@
         await getMsSignupList(0, arFilter = {
           status: 'pending'
         });
-        allData.value = tableData.value;
       });
 
       const submitForm = async ($type) => {
+
         $data = {
           id: form.value.ms_list_id,
           stage_id: form.value.stage_id,

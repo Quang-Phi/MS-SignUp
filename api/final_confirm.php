@@ -78,25 +78,25 @@ try {
         $post["user_id"],
         $requestData
     );
-    foreach ($config["send_mail_to"] as $key => $item) {
-        if (empty($item)) {
-            continue;
-        }
-        if (!empty($item['id'])) {
-            $mailService->sendRequestNotification(
-                $key,
-                $item['id'],
-                $requestData
-            );
-        }
-        if (!empty($item['email'])) {
-            $mailService->sendRequestNotification(
-                $key,
-                $item['email'],
-                $requestData
-            );
-        }
-    }
+    // foreach ($config["send_mail_to"] as $key => $item) {
+    //     if (empty($item)) {
+    //         continue;
+    //     }
+    //     if (!empty($item['id'])) {
+    //         $mailService->sendRequestNotification(
+    //             $key,
+    //             $item['id'],
+    //             $requestData
+    //         );
+    //     }
+    //     if (!empty($item['email'])) {
+    //         $mailService->sendRequestNotification(
+    //             $key,
+    //             $item['email'],
+    //             $requestData
+    //         );
+    //     }
+    // }
 
     http_response_code(200);
     echo json_encode([

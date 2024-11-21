@@ -326,11 +326,11 @@
                             <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :disabled="currMonth < 12 ? month <= currMonth : false"
+                                        :disabled="currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : false"
                                         type="number"
                                         size="small"
                                         v-model="scope.row['m' + month]"
-                                        @input="(event) => handleInputChange(scope.$index, month, event)"
+                                        @input="(event) => handleInputChange(scope.$index, month, event, proposer)"
                                         placeholder="0"
                                         :min="1">
                                     </el-input>
@@ -545,7 +545,7 @@
                 </el-select>
             </div>
 
-            <div v-if="form.process_deal" class="infinite-list-wrapper"
+            <div v-if="form.stage_deal" class="infinite-list-wrapper"
                 v-infinite-scroll="() => load(form.stage_id)"
                 :infinite-scroll-disabled="isDisabled(form.stage_id)"
                 :infinite-scroll-distance="20"

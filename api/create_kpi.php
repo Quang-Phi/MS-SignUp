@@ -24,6 +24,7 @@ try {
         '4' => 'old_kpi_hr'
     ];
 
+    $flag = false;
     if (is_array($stageDeal) && count($stageDeal) > 0) {
         foreach ($ex as $key => $value) {
             $arFilter = array(
@@ -31,15 +32,16 @@ try {
                 'user_id' => $formData['user_id'],
                 'stage_id' => $key
             );
-            $dataKpi = json_decode($formData[$value], true);
+            $dataKpi = is_string($formData[$value]) ? json_decode($formData[$value], true) : $formData[$value];
             if (is_array($dataKpi) && count($dataKpi) > 0) {
                 $data = [
                     'user_id' => $formData['user_id'],
                     'stage_id' => $key,
                     'ms_list_id' => $formData['ms_list_id'],
-                    'year' => $formData['year'],
+                    'year' => $formData['curr_month'] == 12 ? $formData['next_year'] : $formData['year'],
                     'kpi' => json_encode($dataKpi, JSON_UNESCAPED_UNICODE)
                 ];
+
                 $res = null;
                 $result = $kpi->GetList(array(), $arFilter);
                 if (count($result) > 0) {
@@ -47,12 +49,19 @@ try {
                 } else {
                     $res = $kpi->Add($data);
                 }
+                $flag = true;
+            } else {
+                $result = $kpi->GetList(array(), $arFilter);
+                $res = $result[0];
             }
-
             foreach ($old as $x => $value) {
                 $userId = $USER->GetID();
                 if ($key == $x) {
-                    $oldKpi = json_decode($formData[$value], true);
+                    if ($res['year'] < $formData['year']) {
+                        $oldKpi = json_decode($res['kpi'], true);
+                    } else {
+                        $oldKpi = json_decode($formData[$value], true);
+                    }
                     if (is_array($oldKpi) && count($oldKpi) > 0) {
                         $arr = [
                             'modified_by' => $userId,
@@ -62,48 +71,58 @@ try {
                             'is_temporary' => true,
                         ];
                         $kpiHistory->Add($arr);
+                        $flag = true;
                     }
                 }
             }
         }
-    } else {
-        $arFilter = array(
-            'ms_list_id' => $formData['ms_list_id'],
-            'user_id' => $formData['user_id'],
-            'stage_id' => $formData['stage_id']
-        );
-        $data = [
-            'user_id' => $formData['user_id'],
-            'stage_id' => $formData['stage_id'],
-            'ms_list_id' => $formData['ms_list_id'],
-            'year' => $formData['year'],
-            'kpi' => json_encode($formData['kpi'], JSON_UNESCAPED_UNICODE)
+        if ($flag) {
+            
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'data' => $res,
+                'timestamp' => time()
+            ]);
+            exit;
+        }
+    }
+    $arFilter = array(
+        'ms_list_id' => $formData['ms_list_id'],
+        'user_id' => $formData['user_id'],
+        'stage_id' => $formData['stage_id']
+    );
+    $data = [
+        'user_id' => $formData['user_id'],
+        'stage_id' => $formData['stage_id'],
+        'ms_list_id' => $formData['ms_list_id'],
+        'year' => $formData['curr_month'] == 12 ? $formData['next_year'] : $formData['year'],
+        'kpi' => json_encode($formData['kpi'], JSON_UNESCAPED_UNICODE)
+    ];
+
+    $result = $kpi->GetList(array(), $arFilter);
+    $res = null;
+    if (count($result) > 0) {
+        $oldData = [
+            'kpi_id' => $result[0]['id'],
+            'stage_id' => $result[0]['stage_id'],
+            'old_kpi' => $result[0]['kpi'],
+            'is_temporary' => true
         ];
+        $res = $kpi->Update($result[0]['id'], $data);
+        $kpiHistory->Add($oldData);
+    } else {
+        $res = $kpi->Add($data);
+    }
 
-        $result = $kpi->GetList(array(), $arFilter);
-        $res = null;
-        if (count($result) > 0) {
-            $oldData = [
-                'kpi_id' => $result[0]['id'],
-                'stage_id' => $result[0]['stage_id'],
-                'old_kpi' => $result[0]['kpi'],
-                'is_temporary' => true
-            ];
-            $res = $kpi->Update($result[0]['id'], $data);
-            $kpiHistory->Add($oldData);
-        } else {
-            $res = $kpi->Add($data);
-        }
-
-        if ($res && is_array($formData['old_kpi'])) {
-            $arr = [
-                'kpi_id' => $res,
-                'stage_id' => $formData['stage_id'],
-                'old_kpi' => json_encode($formData['old_kpi'], JSON_UNESCAPED_UNICODE),
-                'is_temporary' => true,
-            ];
-            $kpiHistory->Add($arr);
-        }
+    if ($res && is_array($formData['old_kpi'])) {
+        $arr = [
+            'kpi_id' => $res,
+            'stage_id' => $formData['stage_id'],
+            'old_kpi' => json_encode($formData['old_kpi'], JSON_UNESCAPED_UNICODE),
+            'is_temporary' => true,
+        ];
+        $kpiHistory->Add($arr);
     }
 
 

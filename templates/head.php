@@ -5,5 +5,5 @@
     href="./assets/style.css"
     rel="stylesheet">
 <link
-    href="https://unpkg.com/element-plus/dist/index.css" 
+    href="https://bitrixdev.esuhai.org/custom-common/element-UI.css"
     rel="stylesheet">
