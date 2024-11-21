@@ -10,7 +10,8 @@ $config = [
     'hr_ids' => [
         544
     ],
-    'from_mail'=> 'icttool@esuhai.com',
+    'msa_ids' => [],
+    'from_mail' => 'icttool@esuhai.com',
     'workgroup_ms_ids' => [
         13
     ],
@@ -41,7 +42,7 @@ $config = [
             'id' => [544],
             'email' => []
         ],
-        'bod' => [  
+        'bod' => [
             'id' => [544],
             'email' => []
         ]

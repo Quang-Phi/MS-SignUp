@@ -93,19 +93,33 @@
 .form-kpi {
   position: fixed;
   right: 0;
-  width: 1126px;
+  width: calc(100% - 240px);
+  max-width: 1126px;
   height: 100vh;
   z-index: 999;
   top: 0;
   background: rgba(255, 255, 255, 1);
   transition: all 0.3s ease-in-out !important;
-  right: -100%;
+  /* right: -100%; */
   opacity: 0;
   visibility: hidden;
+  transform: translateX(100%);
+    transform-origin: 100% 50%;
+}
+
+@media screen and (max-width: 1160px) {
+  .form-kpi {
+    width: calc(100% - 65px);
+  }
+}
+
+.side-panel{
+  right: 0 !important;
 }
 
 .form-kpi.active {
-  right: 0;
+  transform: translateX(0%);
+  /* right: 0; */
   visibility: visible;
   opacity: 1;
 }
@@ -159,4 +173,12 @@
 
 .timeline-collapse{
   margin: 16px 0;
+}
+
+.infinite-list-wrapper{
+  scrollbar-width: thin;
+}
+
+.el-message-box .el-button+.el-button {
+  margin-left: 12px !important;
 }

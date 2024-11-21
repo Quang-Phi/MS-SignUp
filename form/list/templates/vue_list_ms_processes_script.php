@@ -48,6 +48,8 @@
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
       let urlTeamMSInfo = <?= json_encode($config["url_team_ms_info"] ?? "") ?>;
+      let hrIds = <?= json_encode($config["hr_ids"] ?? "") ?>;
+      let msaIds = <?= json_encode($config["msa_ids"] ?? "") ?>;
       const pageTitle = `Danh sách đơn đăng ký làm MS`;
       const agreeKpiText = `Tôi đồng ý với các KPI được phân công ở bảng trên`;
       const agreeReceivedText = `Tôi đã nhận đủ các phần yêu cầu sau:`;
@@ -82,6 +84,18 @@
                 </ul>
             </div>`;
       });
+
+      const checkUserEdit = (status, proposer) => {
+        if (status === 'pending') return true;
+        switch (Number(proposer.stage_id)) {
+          case 3:
+            return msaIds.includes(userId);
+          case 4:
+            return hrIds.includes(userId);
+          default:
+            return false;
+        }
+      }
 
       const handleChange = (val, stageId) => {
         activeNames.value = val;
@@ -1011,7 +1025,8 @@
         hasTimeline,
         load,
         handleChange,
-        isDisabled
+        isDisabled,
+        checkUserEdit
       }
     }
   });

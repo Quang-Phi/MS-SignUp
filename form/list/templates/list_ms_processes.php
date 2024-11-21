@@ -363,15 +363,12 @@
                     </el-select>
                 </div>
 
-                <el-form-item v-if="form.status !=='error'" class="change-kpi_btn">
+                <el-form-item v-if="form.status !=='error' && checkUserEdit(form.status, proposer)" class="change-kpi_btn">
                     <el-popconfirm
                         title="Điều chỉnh sẽ cần duyệt lại, xác nhận?"
                         @confirm="changeKpi(proposer)">
                         <template #reference>
-                            <el-button
-                                type="primary"
-                                :loading=""
-                                :disabled="">
+                            <el-button type="primary">
                                 <span v-html="textBtn4"></span>
                             </el-button>
                         </template>
@@ -450,7 +447,7 @@
                 </el-checkbox>
             </div>
 
-            <div v-if="form.status !=='error'" class="form-btn">
+            <div v-if="form.status =='pending'" class="form-btn">
                 <el-form-item v-if="!editKpiMSA && !editKpiHR">
                     <el-button
                         type="primary"
@@ -465,6 +462,18 @@
                     <el-button
                         type="primary"
                         @click="handleDealKpi()"
+                        :loading="loading"
+                        :disabled="loading">
+                        <span v-html="textBtn1"></span>
+                    </el-button>
+                </el-form-item>
+            </div>
+
+            <div v-if="form.status =='success'" class="form-btn">
+                <el-form-item>
+                    <el-button
+                        type="primary"
+                        @click="console.log('a')"
                         :loading="loading"
                         :disabled="loading">
                         <span v-html="textBtn1"></span>

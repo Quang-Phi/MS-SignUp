@@ -39,18 +39,13 @@ try {
   $res = $msSignupList->Add($data);
   $arr = [
     [
-      'stage_id' => 2,
-      'reviewer_id' => intval($formData['manager']),
-      'ms_list_id' => $res
-    ],
-    [
       'stage_id' => 1,
       'reviewer_id' => intval($formData['msl_id']),
       'ms_list_id' => $res
     ],
     [
-      'stage_id' => 3,
-      'reviewer_id' => intval($formData['msa_id']),
+      'stage_id' => 2,
+      'reviewer_id' => intval($formData['manager']),
       'ms_list_id' => $res
     ],
     [
@@ -60,12 +55,25 @@ try {
     ]
   ];
 
-  foreach ($config['hr_ids'] as $key => $id) {
-    $arr[] = [
-      'stage_id' => 4,
-      'reviewer_id' => $id,
-      'ms_list_id' => $res
-    ];
+  if (!empty($config['hr_ids'])) {
+    foreach ($config['hr_ids'] as $key => $id) {
+      $arr[] = [
+        'stage_id' => 4,
+        'reviewer_id' => $id,
+        'ms_list_id' => $res
+      ];
+    }
+  }
+
+  $arrMsaId = array_unique(array_merge([intval($formData['msa_id'])], $config['msa_ids']));
+  if (!empty($arrMsaId)) {
+    foreach ($arrMsaId as $key => $id) {
+      $arr[] = [
+        'stage_id' => 3,
+        'reviewer_id' => $id,
+        'ms_list_id' => $res
+      ];
+    }
   }
 
   foreach ($arr as $key => $value) {
