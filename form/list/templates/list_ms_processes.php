@@ -291,8 +291,9 @@
             </div><span class="side-panel-label-text"></span>
         </div>
     </div>
-    <el-form :model="form" :rules="rules" ref="ruleFormRef" label-width="auto" style="margin-top: 32px;">
-        <div class="form-wrapper" v-if="form.stage_id == form.max_stage || form.status == 'error'">
+
+    <el-form v-if="form.status == 'pending'" :model=" form" :rules="rules" ref="ruleFormRef" label-width="auto" style="margin-top: 32px;">
+        <div class="form-wrapper" v-if="form.stage_id == form.max_stage">
             <div class="form-control">
                 <el-form-item label="Người nhận KPI:" prop="user_name">
                     <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
@@ -325,7 +326,7 @@
                             <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :disabled="proposer.stage_id == 3 ? !editKpiMSA || month <= currMonth : !editKpiHR || month <= currMonth"
+                                        :disabled="currMonth < 12 ? month <= currMonth : false"
                                         type="number"
                                         size="small"
                                         v-model="scope.row['m' + month]"
@@ -363,12 +364,15 @@
                     </el-select>
                 </div>
 
-                <el-form-item v-if="form.status !=='error' && checkUserEdit(form.status, proposer)" class="change-kpi_btn">
+                <el-form-item class="change-kpi_btn">
                     <el-popconfirm
                         title="Điều chỉnh sẽ cần duyệt lại, xác nhận?"
                         @confirm="changeKpi(proposer)">
                         <template #reference>
-                            <el-button type="primary">
+                            <el-button
+                                type="primary"
+                                :loading=""
+                                :disabled="">
                                 <span v-html="textBtn4"></span>
                             </el-button>
                         </template>
@@ -441,13 +445,14 @@
                     </div>
                 </div>
             </div>
-            <div class="user_confirm" v-if="!editKpiMSA && !editKpiHR && form.status =='pending'">
+
+            <div class="user_confirm" v-if="!editKpiMSA && !editKpiHR">
                 <el-checkbox v-model="form.agree_kpi">
                     <span v-html="agreeKpiText"></span>
                 </el-checkbox>
             </div>
 
-            <div v-if="form.status =='pending'" class="form-btn">
+            <div class="form-btn">
                 <el-form-item v-if="!editKpiMSA && !editKpiHR">
                     <el-button
                         type="primary"
@@ -468,19 +473,8 @@
                     </el-button>
                 </el-form-item>
             </div>
-
-            <div v-if="form.status =='success'" class="form-btn">
-                <el-form-item>
-                    <el-button
-                        type="primary"
-                        @click="console.log('a')"
-                        :loading="loading"
-                        :disabled="loading">
-                        <span v-html="textBtn1"></span>
-                    </el-button>
-                </el-form-item>
-            </div>
         </div>
+
         <div class="form-wrapper" v-else>
             <div class="form-control">
                 <el-form-item label="Người duyệt KPI:" prop="stage">
@@ -494,11 +488,13 @@
                         <span v-html="linkProposerText"></span>
                     </a>
                 </el-form-item>
+
                 <el-form-item label="Nhóm MS:" prop="team_ms">
                     <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
                         <span v-html="linkTeamMSText"></span>
                     </a>
                 </el-form-item>
+
                 <el-form-item label="Năm:" prop="year">
                     <span v-html="yearText"></span>
                 </el-form-item>
@@ -511,7 +507,7 @@
                         <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                             <template #default="scope">
                                 <el-input
-                                    :disabled="month <= currMonth"
+                                    :disabled="currMonth < 12 ? month <= currMonth : false"
                                     type="number"
                                     size="small"
                                     v-model="scope.row['m' + month]"
@@ -537,6 +533,7 @@
                         </template>
                     </el-table-column>
                 </el-table>
+
                 <el-select class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
                     <el-option
                         v-for="program in listProgram"
@@ -624,6 +621,295 @@
                         <span v-html="textBtn2"></span>
                     </el-button>
                 </el-form-item>
+            </div>
+        </div>
+    </el-form>
+
+    <el-form v-if="form.status == 'success'" :model="form" :rules="rules" ref="ruleFormRef" label-width="auto" style="margin-top: 32px;">
+        <div class="form-wrapper" v-if="form.stage_id == form.max_stage || form.status == 'error'">
+            <div class="form-control">
+                <el-form-item label="Người nhận KPI:" prop="user_name">
+                    <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
+                        <span v-html="linkProposerText"></span>
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Nhóm MS:" prop="team_ms">
+                    <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
+                        <span v-html="linkTeamMSText"></span>
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Năm:" prop="year">
+                    <span v-html="yearText"></span>
+                </el-form-item>
+            </div>
+
+            <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
+                <el-form-item label="Người duyệt KPI:" prop="stage">
+                    <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == proposer.stage_id).reviewer_id}/`" target="_blank">
+                        {{ form.reviewers.find(reviewer => reviewer.stage_id.toString() === proposer.stage_id)?.stage_label }}
+                    </a>
+                </el-form-item>
+
+                <div class="form-table">
+                    <el-table :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR" border style="width: 100%" max-height="500">
+                        <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
+
+                        <template v-for="month in 12" :key="month">
+                            <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
+                                <template #default="scope">
+                                    <el-input
+                                        :disabled="currMonth < 12 ? month <= currMonth : false"
+                                        type="number"
+                                        size="small"
+                                        v-model="scope.row['m' + month]"
+                                        @input="(event) => handleInputChange(scope.$index, month, event)"
+                                        placeholder="0"
+                                        :min="1">
+                                    </el-input>
+                                </template>
+                            </el-table-column>
+                        </template>
+
+                        <el-table-column
+                            v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR"
+                            fixed="right"
+                            label="Hành động"
+                            min-width="100">
+                            <template #default="scope">
+                                <el-button
+                                    link
+                                    type="primary"
+                                    size="small"
+                                    @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
+                                    Xoá
+                                </el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <el-select v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                        <el-option
+                            v-for="program in listProgram"
+                            @click="onAddItem(program, proposer.label)"
+                            :key="program"
+                            :label="program"
+                            :value="program">
+                        </el-option>
+                    </el-select>
+                </div>
+
+                <el-form-item class="change-kpi_btn">
+                    <el-popconfirm
+                        title="Điều chỉnh sẽ cần duyệt lại, xác nhận?"
+                        @confirm="changeKpi(proposer)">
+                        <template #reference>
+                            <el-button
+                                type="primary"
+                                :loading=""
+                                :disabled="">
+                                <span v-html="textBtn4"></span>
+                            </el-button>
+                        </template>
+                    </el-popconfirm>
+                </el-form-item>
+
+                <div class="infinite-list-wrapper"
+                    v-infinite-scroll="() => load(proposer.stage_id)"
+                    :infinite-scroll-disabled="isDisabled(proposer.stage_id)"
+                    :infinite-scroll-distance="20"
+                    :infinite-scroll-immediate="false"
+                    style="overflow:auto; max-height: 600px">
+                    <div v-if="hasTimeline" class="timeline-collapse">
+                        <el-collapse
+                            :model-value="activeNames"
+                            @change="(val) => handleChange(val, proposer.stage_id)">
+                            <el-collapse-item
+                                :title="'Lịch sử thay đổi KPI - ' + proposer.label"
+                                :name="proposer.stage_id">
+                                <div v-loading="timelineLoading" element-loading-text="Loading...">
+                                    <el-timeline style="max-width: 800px">
+                                        <el-timeline-item
+                                            v-for="(item, index) in timelineData[proposer.stage_id]"
+                                            :key="`${proposer.stage_id}_${item.id}_${index}`"
+                                            :timestamp="item.created_at"
+                                            placement="top">
+                                            <el-card>
+                                                <template #header>
+                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                        <a :href="`${urlUserInfo}/${item.user_id}/`" target="_blank">
+                                                            {{ item.user_name }}
+                                                        </a>
+                                                    </div>
+                                                </template>
+                                                <el-table
+                                                    :data="JSON.parse(item.old_kpi || '[]')"
+                                                    border
+                                                    style="width: 100%"
+                                                    max-height="500">
+                                                    <el-table-column
+                                                        fixed
+                                                        prop="program"
+                                                        label="Chương trình"
+                                                        min-width="140">
+                                                    </el-table-column>
+                                                    <template v-for="month in 12" :key="month">
+                                                        <el-table-column
+                                                            :prop="'m' + month"
+                                                            :label="'T' + month"
+                                                            min-width="50">
+                                                            <template #default="scope">
+                                                                <span>{{ scope.row['m' + month] || 0 }}</span>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </template>
+                                                </el-table>
+                                            </el-card>
+                                        </el-timeline-item>
+                                    </el-timeline>
+
+                                    <div v-if="loading" class="loading-more">
+                                        Loading more...
+                                    </div>
+                                    <div v-if="noMore[proposer.stage_id]" class="no-more">
+                                        No more data
+                                    </div>
+                                </div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-btn">
+                <el-form-item>
+                    <el-button
+                        type="primary"
+                        @click=""
+                        :loading="loading"
+                        :disabled="loading">
+                        <span v-html="textBtn1"></span>
+                    </el-button>
+                </el-form-item>
+            </div>
+        </div>
+    </el-form>
+
+    <el-form v-if="form.status == 'error'" :model="form" :rules="rules" ref="ruleFormRef" label-width="auto" style="margin-top: 32px;">
+        <div class="form-wrapper">
+            <div class="form-control">
+                <el-form-item label="Người nhận KPI:" prop="user_name">
+                    <a :href="`${urlUserInfo}/${form.user_id}/`" target="_blank">
+                        <span v-html="linkProposerText"></span>
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Nhóm MS:" prop="team_ms">
+                    <a :href="`${urlTeamMSInfo}${form.team_ms_id}/`" target="_blank">
+                        <span v-html="linkTeamMSText"></span>
+                    </a>
+                </el-form-item>
+
+                <el-form-item label="Năm:" prop="year">
+                    <span v-html="yearText"></span>
+                </el-form-item>
+            </div>
+
+            <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
+                <div v-if="proposer.stage_id <= form.stage_id || (proposer.stage_id == 3 ? count(tableDataKpiMSA) > 0 : count(tableDataKpiHR) > 0)">
+                    <el-form-item label="Người duyệt KPI:" prop="stage">
+                        <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == proposer.stage_id).reviewer_id}/`" target="_blank">
+                            {{ form.reviewers.find(reviewer => reviewer.stage_id.toString() === proposer.stage_id)?.stage_label }}
+                        </a>
+                    </el-form-item>
+
+                    <div class="form-table">
+                        <el-table :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR" border style="width: 100%" max-height="500">
+                            <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
+                            <template v-for="month in 12" :key="month">
+                                <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
+                                    <template #default="scope">
+                                        <el-input
+                                            :disabled="true"
+                                            type="number"
+                                            size="small"
+                                            v-model="scope.row['m' + month]"
+                                            @input="(event) => handleInputChange(scope.$index, month, event)"
+                                            placeholder="0"
+                                            :min="1">
+                                        </el-input>
+                                    </template>
+                                </el-table-column>
+                            </template>
+                        </el-table>
+                    </div>
+                    <div class="infinite-list-wrapper"
+                        v-infinite-scroll="() => load(proposer.stage_id)"
+                        :infinite-scroll-disabled="isDisabled(proposer.stage_id)"
+                        :infinite-scroll-distance="20"
+                        :infinite-scroll-immediate="false"
+                        style="overflow:auto; max-height: 600px">
+                        <div v-if="hasTimeline" class="timeline-collapse">
+                            <el-collapse
+                                :model-value="activeNames"
+                                @change="(val) => handleChange(val, proposer.stage_id)">
+                                <el-collapse-item
+                                    :title="'Lịch sử thay đổi KPI - ' + proposer.label"
+                                    :name="proposer.stage_id">
+                                    <div v-loading="timelineLoading" element-loading-text="Loading...">
+                                        <el-timeline style="max-width: 800px">
+                                            <el-timeline-item
+                                                v-for="(item, index) in timelineData[proposer.stage_id]"
+                                                :key="`${proposer.stage_id}_${item.id}_${index}`"
+                                                :timestamp="item.created_at"
+                                                placement="top">
+                                                <el-card>
+                                                    <template #header>
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <a :href="`${urlUserInfo}/${item.user_id}/`" target="_blank">
+                                                                {{ item.user_name }}
+                                                            </a>
+                                                        </div>
+                                                    </template>
+                                                    <el-table
+                                                        :data="JSON.parse(item.old_kpi || '[]')"
+                                                        border
+                                                        style="width: 100%"
+                                                        max-height="500">
+                                                        <el-table-column
+                                                            fixed
+                                                            prop="program"
+                                                            label="Chương trình"
+                                                            min-width="140">
+                                                        </el-table-column>
+                                                        <template v-for="month in 12" :key="month">
+                                                            <el-table-column
+                                                                :prop="'m' + month"
+                                                                :label="'T' + month"
+                                                                min-width="50">
+                                                                <template #default="scope">
+                                                                    <span>{{ scope.row['m' + month] || 0 }}</span>
+                                                                </template>
+                                                            </el-table-column>
+                                                        </template>
+                                                    </el-table>
+                                                </el-card>
+                                            </el-timeline-item>
+                                        </el-timeline>
+
+                                        <div v-if="loading" class="loading-more">
+                                            Loading more...
+                                        </div>
+                                        <div v-if="noMore[proposer.stage_id]" class="no-more">
+                                            No more data
+                                        </div>
+                                    </div>
+                                </el-collapse-item>
+                            </el-collapse>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </el-form>

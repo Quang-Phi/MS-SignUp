@@ -12,7 +12,8 @@ try {
     $arFilter = array(
         'ms_list_id' => $_GET['ms_list_id'] ?? null,
         'user_id' => $_GET['user_id'] ?? null,
-        'stage_id' => $_GET['stage_id'] ?? null
+        'stage_id' => $_GET['stage_id'] ?? null,
+        'year' => $_GET['year'] ?? null
     );
     $data = $kpi->GetList(array(), $arFilter);
 

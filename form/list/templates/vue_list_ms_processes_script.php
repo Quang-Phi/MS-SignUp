@@ -32,8 +32,11 @@
       const activeNames = ref(['1']);
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
-      const currMonth = ref(new Date().getMonth() + 1);
-      const currYear = ref(new Date().getFullYear());
+      // const currMonth = ref(new Date().getMonth() + 1);
+      const currMonth = ref(12);
+      // const currYear = ref(new Date().getFullYear());
+      const currYear = ref(currMonth.value === 12 ? new Date().getFullYear() + 1 : new Date().getFullYear());
+      // currMonth.value === 12 ? currYear.value + 1 : 
       const isEdit = ref(false);
       const loading = ref(false);
       const tableLoading = ref(false);
@@ -488,7 +491,7 @@
           process_deal: rowData.process_deal,
           agree_kpi: false,
           received_all: false,
-          year: currMonth.value === 12 ? currYear.value + 1 : currYear.value,
+          year: currYear.value,
           kpi: ''
         };
 
@@ -554,7 +557,8 @@
             params: {
               ms_list_id: ms_list_id,
               user_id: user_id,
-              stage_id: stage_id
+              stage_id: stage_id,
+              year: form.value.status !== 'error' ? currYear.value : null
             }
           });
           const data = response.data;
