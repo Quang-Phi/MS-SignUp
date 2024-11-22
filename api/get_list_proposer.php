@@ -1,6 +1,6 @@
 <?php
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/ms_signup_list.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/stage.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/stage.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');

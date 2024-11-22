@@ -326,7 +326,7 @@
                             <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :disabled="currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : false"
+                                        :disabled="currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR)"
                                         type="number"
                                         size="small"
                                         v-model="scope.row['m' + month]"
@@ -503,7 +503,9 @@
             <div class="form-table">
                 <el-table :data="tableDataKpi" border style="width: 100%" max-height="500">
                     <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
-                    <template v-for="month in 12" :key="month">
+                    <template
+                        v-for="month in 12"
+                        :key="month">
                         <el-table-column :prop="'month' + month" :label="'T' + month" min-width="70">
                             <template #default="scope">
                                 <el-input
@@ -519,6 +521,7 @@
                         </el-table-column>
                     </template>
                     <el-table-column
+                        v-if="form.stage_id != 4"
                         fixed="right"
                         label="Hành động"
                         min-width="100">
@@ -534,7 +537,7 @@
                     </el-table-column>
                 </el-table>
 
-                <el-select class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                <el-select v-if="form.stage_id != 4" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
                     <el-option
                         v-for="program in listProgram"
                         @click="onAddItem(program)"

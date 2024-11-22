@@ -33,7 +33,7 @@
       const stageDeal = ref([]);
       // const currMonth = ref(new Date().getMonth() + 1);
       // const currYear = ref(new Date().getFullYear());
-      const currMonth = ref(11);
+      const currMonth = ref(12);
       const currYear = ref(2024);
       // const currMonth = ref(1);
       // const currYear = ref(2025);
@@ -397,6 +397,7 @@
             break;
         }
         stageDeal.value.includes(proposer.stage_id) ? '' : stageDeal.value.push(proposer.stage_id);
+        return true;
       }
 
       const onAddItem = (program, table) => {
@@ -498,12 +499,7 @@
           kpi: ''
         };
 
-        if (hasKpi) {
-          tableDataKpi.value = [];
-          if (currMonth.value < 12) {
-            await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id);
-          }
-        }
+
         if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
           flag.value = true;
           await getListProposer();
@@ -518,18 +514,35 @@
           });
           const responses = await Promise.all(promises);
 
-          // if (currMonth.value === 12) {
-          //   listProposer.value.forEach(element => {
-          //     if (element.label == 'MSA') {
-          //       responses[0].length < 0 ? changeKpi(element) : null
-          //     } else if (element.label == 'HR') {
-          //       responses[1].length < 0 ? changeKpi(element) : null
-          //     }
-          //     changeKpi(element);
-          //   })
+          if (currMonth.value === 12) {
+            listProposer.value.forEach(element => {
+              if (element.label == 'MSA' || element.label == 'HR') {
+                switch (element.label) {
+                  case 'MSA':
+                    tableDataKpiMSA.value.length < 1 ? stageDeal.value.includes(element.stage_id) ? '' : stageDeal.value.push(element.stage_id) : '';
+                    break;
+                  case 'HR':
+                    tableDataKpiHR.value.length < 1 ? stageDeal.value.includes(element.stage_id) ? '' : stageDeal.value.push(element.stage_id) : '';
+                    break;
+                }
+              }
+            })
+            if (tableDataKpiMSA.value.length < 1 && tableDataKpiHR.value.length < 1) {
+              form.value.create_history = true;
+              handleDealKpi(true);
+            }
+          }
+          return;
+        }
 
-          // }
-          // handleDealKpi(true);
+        if (form.value.stage_id == 4) {
+          tableDataKpi.value = [];
+          onAddItem(['KPI:']);
+        }
+
+        if (hasKpi) {
+          tableDataKpi.value = [];
+          await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id);
         }
       }
 
@@ -708,7 +721,6 @@
                 tableDataKpiMSA.value[index] = {};
               }
               tableDataKpiMSA.value[index][`m${month}`] = value;
-              console.log(tableDataKpiMSA.value);
               break;
             case 'HR':
               if (!tableDataKpiHR.value[index]) {
@@ -939,23 +951,24 @@
         form.value.old_kpi_hr = JSON.stringify(oldDataKpiHR.value);
         form.value.old_kpi_msa = JSON.stringify(oldDataKpiMSA.value);
 
-        if (validateTableKpiMSAData() !== true) {
-          ElementPlus.ElMessage({
-            message: validateTableKpiMSAData(),
-            type: 'error'
-          })
-          return;
-        }
-        if (validateTableKpiHRData() !== true) {
-          ElementPlus.ElMessage({
-            message: validateTableKpiHRData(),
-            type: 'error'
-          })
-          return;
-        }
         if ($reset) {
           form.value.kpi_hr = [];
           form.value.kpi_msa = [];
+        } else {
+          if (validateTableKpiMSAData() !== true) {
+            ElementPlus.ElMessage({
+              message: validateTableKpiMSAData(),
+              type: 'error'
+            })
+            return;
+          }
+          if (validateTableKpiHRData() !== true) {
+            ElementPlus.ElMessage({
+              message: validateTableKpiHRData(),
+              type: 'error'
+            })
+            return;
+          }
         }
         try {
           await handleCreateKpi(false);
@@ -988,7 +1001,6 @@
       });
 
       const submitForm = async ($type) => {
-
         $data = {
           id: form.value.ms_list_id,
           stage_id: form.value.stage_id,
@@ -1013,7 +1025,6 @@
           await handleCreateKpi();
         }
         await handleApprove($data);
-
       };
 
       return {

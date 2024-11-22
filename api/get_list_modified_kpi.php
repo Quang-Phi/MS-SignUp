@@ -1,9 +1,9 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] .
 "/bitrix/modules/main/include/prolog_before.php";
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/ms_signup_list.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/kpi.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/kpi_history.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi_history.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');

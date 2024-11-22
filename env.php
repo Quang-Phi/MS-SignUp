@@ -1,7 +1,7 @@
 <?php
 $config = [
     'base_url' => 'https://bitrixdev.esuhai.org',
-    'root_folder' => 'ms-signup',
+    'root_folder' => 'page-custom/ms-signup',
     'url_user_info' => 'https://bitrixdev.esuhai.org/company/personal/user',
     'url_team_ms_info' => 'https://bitrixdev.esuhai.org/company/structure.php?set_filter_structure=Y&structure_UF_DEPARTMENT=',
     'webhook_url' => 'https://bitrixdev.esuhai.org/rest/544/3bm30pypmym3jou1',

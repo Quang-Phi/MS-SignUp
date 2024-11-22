@@ -1,9 +1,9 @@
 <?
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/ms_signup_list.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/reviewer_stage.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/model/stage.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/services/mail_service.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/ms-signup/env.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/reviewer_stage.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/stage.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/services/mail_service.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
