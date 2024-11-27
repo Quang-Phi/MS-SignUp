@@ -4,7 +4,7 @@ require $_SERVER["DOCUMENT_ROOT"] .
     "/bitrix/modules/main/include/prolog_before.php";
 require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/env.php";
 
-$APPLICATION->SetTitle("MS Register");
+$APPLICATION->SetTitle("Đăng ký MS");
 
 if (!$USER->IsAuthorized()) {
     LocalRedirect('/auth/');

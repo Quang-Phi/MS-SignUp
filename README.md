@@ -50,11 +50,12 @@ CREATE TABLE s2config.kpi (
   `user_id` int NOT NULL,
   `stage_id` int NOT NULL,
   `ms_list_id` int NOT NULL,
-  `kpi` TEXT,
+  `year` int NOT NULL,
+  `kpi` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=315 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 CREATE TABLE s2config.kpi_history (
   `id` int NOT NULL AUTO_INCREMENT,

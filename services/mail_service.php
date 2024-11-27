@@ -94,6 +94,7 @@ class MailService
             'review' => "Thông báo yêu cầu xét duyệt mới từ {$requestData['user_name']}",
             'review_kpi' => "Thông báo yêu cầu xét duyệt KPIs của {$requestData['user_name']}",
             'ms_review_kpi' => "Thông báo yêu cầu xác nhận KPIs",
+            'ms_confirmation_kpi' => "Thông báo MS đã xác nhận KPIs",
             'approval' => "Thông báo yêu cầu đã được phê duyệt",
             'approval_notification' => "Thông báo yêu cầu từ {$requestData['user_name']} đã được phê duyệt",
             'rejection_notification' => "Thông báo yêu cầu từ {$requestData['user_name']} đã bị từ chối",

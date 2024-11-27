@@ -16,6 +16,7 @@ try {
     $msSignupList = new MsSignupList($config);
     $reviewerStage = new ReviewerStage();
     $userToGroup = new CSocNetUserToGroup();
+    $mailService = new MailService($config);
 
     $jsonData = file_get_contents("php://input");
     $post = json_decode($jsonData, true);
@@ -82,7 +83,6 @@ try {
             "team_ms" => $post["team_ms"],
         ];
 
-        $mailService = new MailService($config);
         $mailService->sendRequestNotification(
             'approval',
             $post["user_id"],
@@ -152,13 +152,50 @@ try {
         $arFields = [
             "status" => "success",
         ];
+        $arrFields2 = [
+            "ms_list_id" => $post["id"],
+        ];
+
+        $requestData = [
+            "id" => $post["id"],
+            "user_name" => $post["user_name"],
+            "user_email" => $post["user_email"],
+            "employee_id" => $post["employee_id"],
+            "department" => $post["department"],
+            "type_ms" => $post["type_ms"],
+            "team_ms" => $post["team_ms"],
+        ];
+
         if ($post["flag_edit_3"] == true) {
+            $arrFields2["stage_id"] = 3;
             $arFields["flag_edit_3"] = false;
         }
         if ($post["flag_edit_4"] == true) {
+            $arrFields2["stage_id"] = 4;
             $arFields["flag_edit_4"] = false;
         }
+
+        foreach ($post["reviewers"] as $reviewer) {
+            if ($reviewer["stage_id"] == $arrFields2["stage_id"]) {
+                $requestData['reviewer'] = $reviewer["stage_label"];
+                break;
+            }
+        }
+
         $msSignupList->Update($post["ms_list_id"], $arFields);
+
+        $list = $reviewerStage->GetList([], $arrFields2);
+        $reviewerIds = array_map(function ($reviewer) {
+            return $reviewer["reviewer_id"];
+        }, $list);
+
+        if (!empty($reviewerIds)) {
+            $mailResult = $mailService->sendRequestNotification(
+                "ms_confirmation_kpi",
+                $reviewerIds,
+                $requestData
+            );
+        }
     }
 
     http_response_code(200);

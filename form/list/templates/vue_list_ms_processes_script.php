@@ -63,7 +63,7 @@
       let hrIds = <?= json_encode($config["hr_ids"] ?? "") ?>;
       let msaIds = <?= json_encode($config["msa_ids"] ?? "") ?>;
       let coefficients = <?= json_encode($config["coefficients"] ?? "") ?>;
-      const pageTitle = `Danh sách đơn đăng ký làm MS`;
+      const pageTitle = `Danh sách đơn đăng ký tham gia hoạt động MS`;
       const agreeKpiText = `Tôi đồng ý với các KPI được phân công ở bảng trên`;
       const agreeReceivedText = `Tôi đã nhận đủ các phần yêu cầu sau:`;
       const textBtn1 = `Xác nhận`;
@@ -124,18 +124,6 @@
           position: 'top-right'
         });
       };
-
-      const checkUserEdit = (status, proposer) => {
-        if (status === 'pending') return true;
-        switch (Number(proposer.stage_id)) {
-          case 3:
-            return msaIds.includes(userId);
-          case 4:
-            return hrIds.includes(userId);
-          default:
-            return false;
-        }
-      }
 
       const handleChange = (val, stageId) => {
         activeNames.value = val;
@@ -1156,6 +1144,25 @@
         showKPI.value = false;
       }
 
+      const checkViewerMemberKpi = (form) => {
+        const arr = form.reviewers.filter(reviewer => reviewer.stage_id === parseInt(form.max_stage));
+        const reviewers = arr.map(reviewer => reviewer.reviewer_id);
+        return msaIds.includes(userId) || hrIds.includes(userId) || reviewers.includes(userId);
+      }
+
+      const checkShowKPI = (reviewers, stage) => {
+        const result = reviewers.reduce((acc, reviewer) => {
+          if (reviewer.require_kpi && (!acc || reviewer.stage_id < acc.stage_id)) {
+            return reviewer;
+          }
+          return acc;
+        }, null);
+        if (Number(result.stage_id) >= Number(stage)) {
+          return false;
+        }
+        return true;
+      }
+
       onMounted(async () => {
         const url = new URL(window.location.href);
         const id = url.searchParams.get('id');
@@ -1281,7 +1288,6 @@
         load,
         handleChange,
         isDisabled,
-        checkUserEdit,
         getSummaries,
         calculateRowTotal,
         checkStep,
@@ -1300,7 +1306,9 @@
         tableDataKpiMemberHR,
         tableDataKpiMemberMSA,
         loadingMemberKPI,
-        loadingKPI
+        loadingKPI,
+        checkViewerMemberKpi,
+        checkShowKPI
       }
     }
   });

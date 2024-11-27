@@ -5,7 +5,7 @@ require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/env.php";
 
 use Bitrix\Main\Web\HttpClient;
 
-$APPLICATION->SetTitle("List Processes");
+$APPLICATION->SetTitle("Danh sách đăng ký");
 
 if (!$USER->IsAuthorized()) {
     LocalRedirect('/auth/');

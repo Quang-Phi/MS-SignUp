@@ -260,6 +260,7 @@
                 <el-table-column fixed="right" label="Hành động" min-width="120">
                     <template #default="scope">
                         <el-button
+                            v-if="checkShowKPI(scope.row.reviewers, scope.row.stage_id)"
                             type="primary"
                             size="small"
                             @click="handleAddKPI(scope.row)">
@@ -684,7 +685,7 @@
                     <span v-html="yearText"></span>
                 </el-form-item>
 
-                <el-form-item>
+                <el-form-item v-if="checkViewerMemberKpi(form)">
                     <el-button
                         type="primary"
                         @click="showKpisMember()">

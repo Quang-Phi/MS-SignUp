@@ -20,6 +20,7 @@ class EmailTemplates
             'rejection' => 'getRejectionTemplate',
             'approval_notification' => 'getApprovalNotificationTemplate',
             'rejection_notification' => 'getRejectionNotificationTemplate',
+            'ms_confirmation_kpi' => 'getMSConfirmationTemplate'
         ];
 
         foreach ($this->env['send_mail_to'] as $key => $item) {
@@ -36,7 +37,7 @@ class EmailTemplates
     private function getRequestReviewTemplate($requestData)
     {
         $proposeList = '';
-        if (is_array($requestData['propose']) && count($requestData['propose']) > 0) {
+        if (is_array($requestData['propose']) && count($requestData['propose']) > 0 && $requestData['propose'][0] != '') {
             foreach ($requestData['propose'] as $index => $item) {
                 $proposeList .= "<li>{$item}</li>";
             }
@@ -167,7 +168,7 @@ class EmailTemplates
                <h2>Thông báo yêu cầu xác nhận KPIs</h2>
                
                <p>Kính gửi Anh/Chị {$requestData['user_name']},</p>
-               <p>Chúng tôi xin thông báo rằng các KPIs đã được phê duyệt bởi các phòng ban liên quan.</p>
+               <p>Chúng tôi xin thông báo rằng các KPIs đã được phê duyệt/điều chỉnh bởi các phòng ban liên quan.</p>
                
                <h3>Thông tin nhân viên:</h3>
                <ul>
@@ -180,7 +181,7 @@ class EmailTemplates
                </ul>
                
                <p>
-               Để đảm bảo tiến độ và hiệu quả công việc, kính đề nghị Anh/Chị xác nhận các KPIs đã được phê duyệt này trước ngày [Hạn chót xác nhận].
+               Để đảm bảo tiến độ và hiệu quả công việc, kính đề nghị Anh/Chị xác nhận các KPIs đã được phê duyệt/điều chỉnh này trước ngày [Hạn chót xác nhận].
                </p>
     
                <p>Vui lòng phản hồi trực tiếp qua hệ thống Bitrix tại: 
@@ -449,6 +450,45 @@ class EmailTemplates
            </div>
        ";
 
+        return $template . $footer;
+    }
+
+    private function getMSConfirmationTemplate($requestData)
+    {
+        $template = "
+           <div style='font-family: Arial, sans-serif; padding: 20px;'>
+               <p>Đây là email thông báo từ Admin của hệ thống Bitrix Esuhai. Vui lòng không trả lời email này!</p>
+               <h2>Thông báo MS đã xác nhận KPIs</h2>
+               
+               <p>Kính gửi Anh/Chị {$requestData['reviewer']},</p>
+               <p>Chúng tôi xin thông báo rằng MS {$requestData['ms_name']} đã xác nhận KPIs được đặt ra.</p>
+               
+               <h3>Thông tin chi tiết:</h3>
+               <ul>
+                   <li>Họ tên: {$requestData['user_name']}</li>
+                   <li>Email: {$requestData['user_email']}</li>
+                   <li>Mã nhân viên: {$requestData['employee_id']}</li>
+                   <li>Phòng ban: {$requestData['department']}</li>
+                   <li>Team MS: {$requestData['team_ms']}</li>
+                   <li>Phân loại MS: {$requestData['type_ms']}</li>\
+               </ul>
+               
+               <p>Xem thông tin chi tiết trực tiếp qua hệ thống Bitrix tại:
+                    <a href='{$this->appUrl}/form/list/?tab=2&id={$requestData['id']}'>
+                        {$this->appUrl}/form/list/?tab=2&id={$requestData['id']}
+                    </a>
+               </p>
+           </div>
+       ";
+    
+        $footer = "
+           <div style='font-family: Arial, sans-serif; padding: 20px;'>
+               <p>Trân trọng,</p>
+               <p>Admin Team</p>
+               <p>Hệ thống Bitrix Esuhai</p>
+           </div>
+       ";
+    
         return $template . $footer;
     }
 

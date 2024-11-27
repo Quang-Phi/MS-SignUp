@@ -49,10 +49,12 @@
                 "Gia nhập nhóm email MS",
                 "Thêm vào danh sách MS",
                 "Line tổng đài Omical",
-                "Thiết bị MS (Tai nge, webcam,...)",
+                "Tai nghe",
+                "Webcam",
+                "SIM Zalo (có 4G)"
             ])
 
-            const pageTitle = `Form đăng ký làm MS`;
+            const pageTitle = `Form đăng ký tham gia hoạt động MS`;
             const dialogContent = `
                 <div class="dialog-content">
                     <div class="main-commitments">
