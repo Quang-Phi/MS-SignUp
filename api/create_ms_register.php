@@ -18,6 +18,13 @@ try {
 
   $listStage = $stage->GetList();
   $stageId = 1;
+  $stageLabel = '';
+  foreach ($listStage as $item) {
+    if ($item['stage_id'] == $stageId) {
+      $stageLabel = $item['label'];
+      break;
+    }
+  }
   $maxStage = count($listStage);
   $data = [
     'employee_id' => $formData['employee_id'],
@@ -27,7 +34,6 @@ try {
     'stage_id' => $stageId,
     'max_stage' => $maxStage,
     'status' => $formData['status'],
-    //'status' => "success",
     'department_id' => $formData['department_id'],
     'team_ms_id' => intval($formData['team_ms_id']),
     'type_ms_id' => intval($formData['type_ms_id']),
@@ -39,12 +45,12 @@ try {
   $res = $msSignupList->Add($data);
   $arr = [
     [
-      'stage_id' => 1,
+      'stage_id' => 2,
       'reviewer_id' => intval($formData['msl_id']),
       'ms_list_id' => $res
     ],
     [
-      'stage_id' => 2,
+      'stage_id' => 1,
       'reviewer_id' => intval($formData['manager']),
       'ms_list_id' => $res
     ],
@@ -81,12 +87,14 @@ try {
   }
 
   $requestData = [
+    "id" => $res,
     "user_name" => $formData["user_name"],
     "user_email" => $formData["user_email"],
     "employee_id" => $formData["employee_id"],
     "department" => $formData["department"],
     "type_ms" => $formData["type_ms"],
     "team_ms" => $formData["team_ms"],
+    "department_name" => $stageLabel,
     "propose" => json_decode($formData["list_propose"], true),
   ];
 
@@ -103,7 +111,7 @@ try {
   if (!empty($currentReviewerIds)) {
     try {
       $mailResult = $mailService->sendRequestNotification(
-        'request_review',
+        'review',
         $currentReviewerIds,
         $requestData
       );

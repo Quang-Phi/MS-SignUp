@@ -108,6 +108,11 @@
                 }]
             };
 
+            const selectedTeamName = computed(() => {
+                const selectedTeam = listTeamMS.value.find(team => team.ID === form.value.team_ms_id);
+                return selectedTeam ? selectedTeam.NAME : '';
+            });
+
             const removeManager = () => {
                 selectedManager.value = null;
                 form.value.manager = '';
@@ -271,6 +276,15 @@
                 pageLoading.value = false;
             });
 
+            const showNotification = (type, message) => {
+                ElementPlus.ElNotification({
+                    type: type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'error',
+                    message: message,
+                    duration: 2000,
+                    position: 'top-right'
+                });
+            };
+
             const submitForm = async () => {
                 ruleFormRef.value.validate(async (valid, fields) => {
                     if (!valid) {
@@ -278,6 +292,7 @@
                         return;
                     }
                     try {
+                        console.log(form.value);
                         loading.value = true;
                         const headMS = await getHeadDepartment(form.value.team_ms_id, 'departmentId');
                         const headMSA = await getHeadDepartment(MSAid, 'departmentId');
@@ -296,27 +311,20 @@
                         }
                         //const response = await axios.post(`./register_wf.php`, formData);
 
-                        const response = await axios.post(`../../api/create_ms_regiser.php`, form.value);
+                        const response = await axios.post(`../../api/create_ms_register.php`, form.value);
                         const data = response.data;
                         if (data.success) {
-                            window.location.href = "<?php echo $config['base_url']; ?>/<?php echo $config['root_folder']; ?>/form/list/";
+                            showNotification('success', 'Gửi đơn đăng ký thành công.');
+                            setTimeout(() => {
+                                window.location.href = "<?php echo $config['base_url']; ?>/<?php echo $config['root_folder']; ?>/form/list/";
+                            }, 1000);
                         } else {
                             loading.value = false;
-                            ElementPlus.ElNotification({
-                                message: data.message || 'Có lỗi xảy ra!',
-                                type: 'error',
-                                duration: 2000,
-                                position: 'top-right'
-                            });
+                            showNotification('error', data.message || 'Có lỗi xảy ra!');
                         }
                     } catch (error) {
                         loading.value = false;
-                        ElementPlus.ElNotification({
-                            message: data.message || 'Có lỗi xảy ra!',
-                            type: 'error',
-                            duration: 2000,
-                            position: 'top-right'
-                        });
+                        showNotification('error', error.message || 'Có lỗi xảy ra!');
                     }
 
                 })

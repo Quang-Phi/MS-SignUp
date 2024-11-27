@@ -75,10 +75,16 @@ try {
             "comments" => $post["comments"],
         ];
 
+        $mailResult = $mailService->sendRequestNotification(
+            "rejection",
+            $post["user_id"],
+            $requestData
+        );
+
         if (!empty($reviewerIds)) {
             try {
                 $mailResult = $mailService->sendRequestNotification(
-                    "rejected",
+                    "rejection_notification",
                     $reviewerIds,
                     $requestData
                 );

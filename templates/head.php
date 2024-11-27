@@ -1,6 +1,4 @@
-<link
-    rel="stylesheet"
-    href="./sources/fonts/fontawesome-free-6.1.2-web/fontawesome-free-6.1.2-web/css/all.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" />
 <link
     href="./assets/style.css"
     rel="stylesheet">

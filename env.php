@@ -17,34 +17,20 @@ $config = [
     ],
     'user_employee_id_field' => 'UF_USR_1712807573026',
     'user_type_ms_field' => 'UF_USR_1712631669169',
+    'coefficients' => [
+        'THỰC TẬP SINH 1 NĂM' => 0.5,
+        'THỰC TẬP SINH NP1' => 0.5,
+        'THỰC TẬP SINH MAY' => 0.5,
+        'LƯU HỌC' => 1,
+        'LƯU HỌC KAIGO' => 1,
+        'THỰC TẬP SINH 3 NĂM' => 1,
+        'THỰC TẬP SINH KAIGO' => 1,
+        'KỸ SƯ' => 1.5
+    ],
     'send_mail_to' => [
-        'control_board' => [
+        'support' => [
             'id' => [544],
             'email' => []
         ],
-        'ict' => [
-            'id' => [],
-            'email' => ['phidq@esuhai.com']
-        ],
-        'hr' => [
-            'id' => [544],
-            'email' => []
-        ],
-        'msl' => [
-            'id' => [544],
-            'email' => []
-        ],
-        'msa' => [
-            'id' => [544],
-            'email' => []
-        ],
-        'leader' => [
-            'id' => [544],
-            'email' => []
-        ],
-        'bod' => [
-            'id' => [544],
-            'email' => []
-        ]
     ]
 ];

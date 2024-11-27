@@ -19,24 +19,23 @@
       const tableDataKpiHR = ref([]);
       const oldDataKpiMSA = ref([]);
       const oldDataKpiHR = ref([]);
-      const tableDataKpiMemberHR = ref([]);
-      const tableDataKpiMemberMSA = ref([]);
       const showFormKPI = ref(false);
       const createdProgram = ref([]);
       const createdProgramMSA = ref([]);
       const createdProgramHR = ref([]);
       const selectedProgram = ref('');
       const listProposer = ref([]);
-      const teamMsMember = ref([]);
       const count = ref({});
       const noMore = ref({});
       const timelineData = ref({});
       const timelineLoading = ref(false);
-      const activeNames = ref('pending');
+      const activeNames = ref(['1']);
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
       // const currMonth = ref(new Date().getMonth() + 1);
       // const currYear = ref(new Date().getFullYear());
+      // const currMonth = ref(12);
+      // const currYear = ref(2024);
       const currMonth = ref(1);
       const currYear = ref(2025);
       const nextYear = ref(new Date().getFullYear() + 1);
@@ -46,16 +45,12 @@
       const rejectLoading = ref({});
       const approveLoading = ref({});
       const loadingHistory = ref(false);
-      const loadingKPI = ref(false);
-      const loadingMemberKPI = ref(false);
       const currentPage = ref(1);
       const pageSize = ref(50);
       const total = ref(0);
       const errYear = ref(0);
       const searchQuery = ref('');
       const activeName = ref('pending');
-      const activeNameKpi = ref(null);
-      const showKPI = ref(false);
       let userId = <?= json_encode($userID ?? "") ?>;
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
@@ -86,7 +81,6 @@
       const yearText = computed(() => {
         return `<span>${currMonth.value === 12  && form.value.status === 'pending' ? nextYear.value : form.value.status === 'error'? errYear.value : currYear.value}</span>`
       })
-
       const totalText = computed(() => {
         return `<span>TỔNG:</span>
           <span style="font-weight: bold; margin-left: 4px">${total.value}</span>`;
@@ -98,10 +92,6 @@
 
       const linkTeamMSText = computed(() => {
         return form.value.team_ms;
-      });
-
-      const btnKpisMemberText = computed(() => {
-        return `KPIs thành viên nhóm ${form.value.team_ms}`;
       });
 
       const listText = computed(() => {
@@ -264,7 +254,7 @@
 
       const reloadPage = () => {
         setTimeout(() => {
-          window.location.href = "<?php echo $config['base_url']; ?>/<?php echo $config['root_folder']; ?>/form/list/";
+          window.location.reload();
         }, 1000);
       }
 
@@ -278,7 +268,15 @@
             params = paramsApprove;
           } else {
             params = {
-              ...row,
+              id: row.id,
+              stage_id: row.stage_id,
+              user_name: row.user_name,
+              user_email: row.user_email,
+              user_id: row.user_id,
+              employee_id: row.employee_id,
+              department: row.department,
+              type_ms: row.type_ms,
+              team_ms: row.team_ms,
               propose: row.list_propose.split(/, (?![^(]*\))/)
             };
           }
@@ -296,8 +294,6 @@
               if (row?.id) {
                 approveLoading.value[row.id] = false;
               }
-              loading.value = false;
-              loadingKPI.value = false;
               showNotification('error', 'Có lỗi xảy ra khi xét duyệt');
             }
           }
@@ -310,8 +306,7 @@
           } else {
             errorMessage = error.message;
           }
-          loading.value = false;
-          loadingKPI.value = false;
+
           showNotification('error', errorMessage);
         }
       };
@@ -333,7 +328,15 @@
             rejectLoading.value[row.id] = true;
             try {
               const response = await axios.post('../../api/reject_ms_register.php', {
-                ...row,
+                id: row.id,
+                stage_id: row.stage_id,
+                user_id: row.user_id,
+                user_name: row.user_name,
+                user_email: row.user_email,
+                employee_id: row.employee_id,
+                department: row.department,
+                type_ms: row.type_ms,
+                team_ms: row.team_ms,
                 comments: value,
                 reviewer: row.reviewers.find(reviewer => reviewer.stage_id.toString() === row.stage_id)?.stage_label
               });
@@ -414,7 +417,7 @@
             case 'HR':
               editKpiHR.value = true;
               if (tableDataKpiHR.value.length < 1) {
-                onAddItem('KPI', 'HR');
+                onAddItem(['KPI'], 'HR');
               } else {
                 oldDataKpiHR.value = tableDataKpiHR.value.map(row => ({
                   ...row
@@ -474,10 +477,7 @@
       }
 
       const handleAddKPI = async (rowData) => {
-        loadingKPI.value = true;
-        tableDataKpi.value = [];
-        tableDataKpiMSA.value = [];
-        tableDataKpiHR.value = [];
+
         showFormKPI.value = !showFormKPI.value;
         if (showFormKPI.value) {
           document.body.style.overflow = 'hidden';
@@ -485,18 +485,37 @@
         const stageInfo = rowData.reviewers.find(reviewer => reviewer.stage_id.toString() === rowData.stage_id);
         const hasKpi = stageInfo ? stageInfo.has_kpi : '';
         const stageLabel = stageInfo ? stageInfo.stage_label : '';
+        form.value =rowData;
         form.value = {
-          ...rowData,
-          has_kpi: hasKpi,
+          status: rowData.status,
           stage: stageLabel,
-          stage_deal: rowData.process_deal,
+          stage_id: rowData.stage_id,
+          max_stage: rowData.max_stage,
+          list_propose: rowData.list_propose.split(', '),
           ms_list_id: rowData.id,
+          user_id: rowData.user_id,
+          user_name: rowData.user_name,
+          user_email: rowData.user_email,
+          employee_id: rowData.employee_id,
+          department: rowData.department,
+          department_ids: rowData.department_id,
+          type_ms: rowData.type_ms,
+          type_ms_id: rowData.type_ms_id,
+          propose: rowData.propose,
+          team_ms: rowData.team_ms,
+          team_ms_id: rowData.team_ms_id,
+          completed: rowData.completed,
+          has_kpi: hasKpi,
+          reviewers: rowData.reviewers,
+          stage_deal: rowData.process_deal,
+          flag_edit_3: rowData.flag_edit_3,
+          flag_edit_4: rowData.flag_edit_4,
           agree_kpi: false,
           received_all: false,
           year: currYear.value,
           next_year: nextYear.value,
           curr_month: currMonth.value,
-          department_ids: rowData.department_id,
+          flag: rowData.flag,
           kpi: ''
         };
 
@@ -509,6 +528,8 @@
             year = currYear.value;
             break;
         }
+
+
         if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
           flag.value = true;
           await getListProposer();
@@ -541,7 +562,6 @@
               handleDealKpi(true);
             }
           }
-          loadingKPI.value = false;
           return;
         }
 
@@ -552,10 +572,8 @@
 
         if (form.value.stage_id == 4 && tableDataKpi.value.length == 0) {
           tableDataKpi.value = [];
-          onAddItem('KPI');
+          onAddItem(['KPI']);
         }
-
-        loadingKPI.value = false;
       }
 
       const isFormValid = computed(() => {
@@ -590,20 +608,15 @@
           case 'HR':
             baseTable = tableDataKpiHR;
             break;
-          case 'member_HR':
-            baseTable = tableDataKpiMemberHR;
-            break;
-          case 'member_MSA':
-            baseTable = tableDataKpiMemberMSA;
-            break;
         }
+        baseTable.value = [];
         try {
           const response = await axios.get(`../../api/get_user_kpi.php`, {
             params: {
-              ms_list_id,
-              user_id,
-              stage_id,
-              year
+              ms_list_id: ms_list_id,
+              user_id: user_id,
+              stage_id: stage_id,
+              year: year
             }
           });
           const data = response.data;
@@ -634,12 +647,9 @@
                 case 'HR':
                   createdProgramHR.value.push(element.program);
                   break;
-                case 'member_HR':
-                  break;
-                case 'member_MSA':
-                  break;
               }
             });
+            return data.data;
           } else {
             console.error('API Error:', data.message);
             baseTable.value = [];
@@ -667,7 +677,6 @@
               element.list_propose = JSON.parse(element.list_propose).join(', ');
             }
             element.created_at = new Date(element.created_at).toLocaleDateString('vi-VN');
-            element.join_date = new Date(element.join_date).toLocaleDateString('vi-VN');
           });
           if (data.success && data.data) {
             tableData.value = data.data;
@@ -731,10 +740,8 @@
 
       const handleInputChange = (index, month, value, proposer) => {
         isEdit.value = true;
-        const regex = /^[0-9.,]+$/;
-        if (!regex.test(value) || isNaN(value)) {
-          value = ''
-        }
+        const numValue = Number(value) || 0;
+
         if (proposer) {
           switch (proposer.label) {
             case 'MSA':
@@ -743,35 +750,25 @@
               }
               tableDataKpiMSA.value[index] = {
                 ...tableDataKpiMSA.value[index],
-                [`m${month}`]: value ? Math.round(value) : ''
+                [`m${month}`]: numValue
               };
               break;
             case 'HR':
-              const parts = value.split('.');
-              if (parts.length > 1) {
-                value = parts[0] + '.' + parts[1].substring(0, 1);
-              }
               if (!tableDataKpiHR.value[index]) {
                 tableDataKpiHR.value[index] = {};
               }
               tableDataKpiHR.value[index] = {
                 ...tableDataKpiHR.value[index],
-                [`m${month}`]: value
+                [`m${month}`]: numValue
               };
               break;
             default:
               if (!tableDataKpi.value[index]) {
                 tableDataKpi.value[index] = {};
               }
-              if (proposer.stage_id == 4) {
-                const parts = value.split('.');
-                if (parts.length > 1) {
-                  value = parts[0] + '.' + parts[1].substring(0, 1);
-                }
-              }
               tableDataKpi.value[index] = {
                 ...tableDataKpi.value[index],
-                [`m${month}`]: proposer.stage_id == 4 ? value : value ? Math.round(value) : ''
+                [`m${month}`]: numValue
               };
               break;
           }
@@ -891,23 +888,17 @@
       const finalSubmit = async () => {
         try {
           loading.value = true;
-          loadingKPI.value = true;
           const response = await axios.post('../../api/final_confirm.php', form.value);
-          if (response.data.success && form.value.completed == false) {
+          if (response.data.success && form.value.completed === false) {
             showNotification('success', 'Đăng ký MS thành công.');
-            reloadPage();
-          } else if (response.data.success && form.value.completed == true) {
-            showNotification('success', 'Xác nhận thành công');
             reloadPage();
           } else {
             loading.value = false;
-            loadingKPI.value = false;
             showNotification('error', response.data.message || 'Có lỗi xảy ra khi đăng ký MS');
           }
 
         } catch (error) {
           loading.value = false;
-          loadingKPI.value = false;
           showNotification()
         }
       }
@@ -937,7 +928,6 @@
 
       const handleClick = async (tab, event) => {
         activeName.value = tab.props.name;
-        searchQuery.value = '';
         let arFilter = null;
         switch (tab.props.name) {
           case 'pending':
@@ -965,7 +955,6 @@
 
       const handleDealKpi = async (resetArr = false) => {
         loading.value = true;
-        loadingKPI.value = true;
         form.value.stage_deal = JSON.stringify(stageDeal.value);
         form.value.kpi_hr = JSON.stringify(tableDataKpiHR.value);
         form.value.kpi_msa = JSON.stringify(tableDataKpiMSA.value);
@@ -980,13 +969,11 @@
             if (validateTableKpiMSAData() !== true) {
               showNotification('error', validateTableKpiMSAData());
               loading.value = false;
-              loadingKPI.value = false;
               return;
             }
             if (validateTableKpiHRData() !== true) {
               showNotification('error', validateTableKpiHRData());
               loading.value = false;
-              loadingKPI.value = false;
               return;
             }
           }
@@ -996,33 +983,42 @@
             if (editKpiMSA.value && validateTableKpiMSAData() !== true) {
               showNotification('error', validateTableKpiMSAData());
               loading.value = false;
-              loadingKPI.value = false;
               return;
             }
             if (editKpiHR.value && validateTableKpiHRData() !== true) {
               showNotification('error', validateTableKpiHRData());
               loading.value = false;
-              loadingKPI.value = false;
               return;
             }
           }
         }
+        console.log(form.value);
         try {
-          const res = await handleCreateKpi();
-          if (res) {
+          $res = await handleCreateKpi();
+          if ($res) {
             const params = {
-              ...form.value,
               id: form.value.ms_list_id,
+              user_name: form.value.user_name,
+              user_email: form.value.user_email,
+              user_id: form.value.user_id,
+              employee_id: form.value.employee_id,
+              department: form.value.department,
+              type_ms: form.value.type_ms,
+              team_ms: form.value.team_ms,
               propose: form.value.list_propose,
-              stage_deal: JSON.stringify(stageDeal.value)
-            }
+              max_stage: form.value.max_stage,
+              stage_id: form.value.stage_id,
+              flag_edit_3: form.value.flag_edit_3,
+              flag_edit_4: form.value.flag_edit_4,
+              stage_deal: JSON.stringify(stageDeal.value),
+            };
+            console.log(params);
             await handleApprove(null, params, false);
             resetArr ? showNotification('success', 'Chưa có KPI, đã gửi yêu cầu thêm KPI mới.') : showNotification('success', 'Gửi yêu cầu điều chỉnh thành công.');
           }
 
         } catch (error) {
           loading.value = false;
-          loadingKPI.value = false;
           showNotification('error', 'Có lỗi xảy ra.');
         }
       }
@@ -1100,90 +1096,7 @@
         }
       }
 
-      const getTeamMsMember = async () => {
-        try {
-          const response = await axios.get('../../api/get_team_ms_member.php', {
-            params: {
-              team_ms_id: form.value.team_ms_id
-            }
-          });
-          if (response.data.success) {
-            teamMsMember.value = response.data.data;
-            return response.data.data;
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      const showKpisMember = async () => {
-        showKPI.value = true;
-        loadingMemberKPI.value = true;
-        tableDataKpiMemberHR.value = [];
-        tableDataKpiMemberMSA.value = [];
-        const res = await getTeamMsMember();
-        if (res) {
-          const promises = listProposer.value.map(element => {
-            if (element.label == 'MSA') {
-              return getUserKpi(null, res[0].ID, element.stage_id, 'member_MSA', currYear.value);
-            } else if (element.label == 'HR') {
-              return getUserKpi(null, res[0].ID, element.stage_id, 'member_HR', currYear.value);
-            }
-          });
-          const responses = await Promise.all(promises);
-        }
-        activeNameKpi.value = res[0].ID;
-        loadingMemberKPI.value = false;
-      }
-
-      const handleClickTab = async (tab, event) => {
-        loadingMemberKPI.value = true;
-        tableDataKpiMemberHR.value = [];
-        tableDataKpiMemberMSA.value = [];
-        activeNameKpi.value = tab.props.name;
-        const promises = listProposer.value.map(element => {
-          if (element.label == 'MSA') {
-            return getUserKpi(null, tab.props.name, element.stage_id, 'member_MSA', currYear.value);
-          } else if (element.label == 'HR') {
-            return getUserKpi(null, tab.props.name, element.stage_id, 'member_HR', currYear.value);
-          }
-        });
-        const responses = await Promise.all(promises);
-        loadingMemberKPI.value = false;
-      }
-
-      const hideKPIsMember = () => {
-        showKPI.value = false;
-      }
-
       onMounted(async () => {
-        const url = new URL(window.location.href);
-        const id = url.searchParams.get('id');
-        const tab = url.searchParams.get('tab');
-        let type = null;
-        if (tab) {
-          switch (tab) {
-            case '1':
-              activeName.value = 'pending';
-              type = 'pending';
-              break;
-            case '2':
-              activeName.value = 'approved';
-              type = 'approved';
-              break;
-            case '3':
-              activeName.value = 'rejected';
-              type = 'rejected';
-              break;
-            default:
-              break;
-          }
-        }
-        if (id && tab && type) {
-          searchQuery.value = id;
-          handleSearch(type);
-          return;
-        }
         await getMsSignupList(0, arFilter = {
           status: 'pending'
         });
@@ -1191,29 +1104,35 @@
 
       const submitForm = async ($type) => {
         loading.value = true;
-        loadingKPI.value = true;
         $data = {
-          ...form.value,
           id: form.value.ms_list_id,
+          stage_id: form.value.stage_id,
+          user_id: form.value.user_id,
+          user_name: form.value.user_name,
+          user_email: form.value.user_email,
+          stage_id: form.value.stage_id,
+          employee_id: form.value.employee_id,
+          department: form.value.department,
+          type_ms: form.value.type_ms,
+          team_ms: form.value.team_ms,
+          propose: form.value.propose,
+          list_propose: form.value.list_propose.join(', '),
         };
         const flag = validateTableKpiData();
         if (flag !== true) {
           showNotification('warning', flag);
-          loading.value = false;
-          loadingKPI.value = false;
           return;
         }
         if (isEdit.value) {
-          const res = await handleCreateKpi();
-          if (res) {
+          $res = await handleCreateKpi();
+          if ($res) {
             await handleApprove($data);
-          } else {
-            loadingKPI.value = false;
             loading.value = false;
           }
           return;
         }
         await handleApprove($data);
+        loading.value = false;
       };
 
       return {
@@ -1290,17 +1209,6 @@
         noMoreText,
         textReviewerName,
         textReviewerName2,
-        btnKpisMemberText,
-        showKpisMember,
-        showKPI,
-        hideKPIsMember,
-        activeNameKpi,
-        handleClickTab,
-        teamMsMember,
-        tableDataKpiMemberHR,
-        tableDataKpiMemberMSA,
-        loadingMemberKPI,
-        loadingKPI
       }
     }
   });

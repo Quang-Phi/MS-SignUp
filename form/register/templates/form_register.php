@@ -57,7 +57,7 @@
                                 <div class="manager-position">{{ selectedManager.position || selectedManager.type }}</div>
                             </div>
                             <div class="remove-button">
-                                <i class="fas fa-times" @click="removeManager"></i>
+                                <ion-icon name="close-outline" @click="removeManager"></ion-icon>
                             </div>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
 
             </el-form-item>
 
-            <el-form-item label="Chọn team MS:" prop="team_ms">
+            <el-form-item label="Chọn team MS:" prop="team_ms_id">
                 <el-select
                     v-model="form.team_ms_id"
                     placeholder="Select">
@@ -113,7 +113,7 @@
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Chọn vai trò MS:" prop="type_ms">
+            <el-form-item label="Chọn vai trò MS:" prop="type_ms_id">
                 <el-select v-model="form.type_ms_id" placeholder="Select">
                     <el-option
                         v-for="(value, key) in typeMS"
@@ -123,7 +123,7 @@
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Danh sách đề xuất:" prop="list_propose">
+            <el-form-item class="custom-checkbox" label="Danh sách đề xuất:" prop="list_propose">
                 <el-select
                     v-model="form.list_propose"
                     multiple
@@ -139,42 +139,40 @@
                 </el-select>
             </el-form-item>
 
-            <div>
-                <el-form-item @click="dialogVisible = true" :style="{ color: 'blue', cursor: 'pointer' }">
-                    <div v-html="dialogLink"></div>
+            <el-form-item @click="dialogVisible = true" :style="{ color: 'blue', cursor: 'pointer' }">
+                <div style="margin-left: 180px;" v-html="dialogLink"></div>
+            </el-form-item>
+
+            <el-dialog
+                v-model="dialogVisible"
+                title="Quy định về bảo mật thông tin và cam kết"
+                width="700"
+                height="500">
+                <div v-html="dialogContent"></div>
+
+                <el-form-item prop="checkbox" style="margin-top: 16px">
+                    <el-checkbox
+                        width="500"
+                        v-model="form.confirmation"
+                        true-label="Tôi ĐỒNG Ý và CAM KẾT tuân thủ các quy định của công ty"
+                        false-label="">
+                        <div v-html="dialogCheckbox"></div>
+                    </el-checkbox>
                 </el-form-item>
 
-                <el-dialog
-                    v-model="dialogVisible"
-                    title="Quy định về bảo mật thông tin và cam kết"
-                    width="700"
-                    height="500">
-                    <div v-html="dialogContent"></div>
-
-                    <el-form-item prop="checkbox" style="margin-top: 16px">
-                        <el-checkbox
-                            width="500"
-                            v-model="form.confirmation"
-                            true-label="Tôi ĐỒNG Ý và CAM KẾT tuân thủ các quy định của công ty"
-                            false-label="">
-                            <div v-html="dialogCheckbox"></div>
-                        </el-checkbox>
-                    </el-form-item>
-
-                    <template #footer>
-                        <div class="dialog-footer">
-                            <el-button @click="dialogVisible = false">Cancel</el-button>
-                            <el-button
-                                type="primary"
-                                @click="submitForm"
-                                :loading="loading"
-                                :disabled="loading || !isFormValid">
-                                Gửi
-                            </el-button>
-                        </div>
-                    </template>
-                </el-dialog>
-            </div>
+                <template #footer>
+                    <div class="dialog-footer">
+                        <el-button @click="dialogVisible = false">Cancel</el-button>
+                        <el-button
+                            type="primary"
+                            @click="submitForm"
+                            :loading="loading"
+                            :disabled="loading || !isFormValid">
+                            Gửi
+                        </el-button>
+                    </div>
+                </template>
+            </el-dialog>
         </el-form>
     </div>
 </div>

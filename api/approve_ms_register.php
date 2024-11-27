@@ -3,19 +3,28 @@ require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/model/ms_signup_list
 require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/model/reviewer_stage.php";
 require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/services/mail_service.php";
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/stage.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi_history.php';
+
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 
 try {
-    $msSignupList = new MsSignupList($config);
+    $msSignupList = new MsSignupList(env: $config);
     $reviewerStage = new ReviewerStage();
+    $stage = new Stage();
+    $kpi = new Kpi();
+    $kpiHistory = new KpiHistory();
+    $mailService = new MailService($config);
 
     $jsonData = file_get_contents("php://input");
     $post = json_decode($jsonData, true);
 
-    $stageDeal = json_decode($post["stage_deal"], true) ;
+    $stageDeal = json_decode($post["stage_deal"], true);
+    $currStage = $stageDeal[0];
     $nextStageId = null;
 
     $arFields = array();
@@ -27,7 +36,7 @@ try {
             sort($arr);
             $nextStageId = $arr[0];;
             array_shift($arr);
-            $arFields =[
+            $arFields = [
                 "process_deal" => json_encode($arr),
                 "stage_id" => $nextStageId
             ];
@@ -54,56 +63,105 @@ try {
         sort($stageDeal);
         $nextStageId = $stageDeal[0];
         array_shift($stageDeal);
-        $arFields =[
+        $arFields = [
             "process_deal" => json_encode($stageDeal),
-            "stage_id" => $nextStageId
+            "stage_id" => $nextStageId,
+            "status" => "pending"
         ];
+    }
+
+    if ($post["flag_edit_3"] == true) {
+        $arFields["flag_edit_3"] = true;
+    }
+
+    if ($post["flag_edit_4"] == true) {
+        $arFields["flag_edit_4"] = true;
     }
 
     $arrFields2 = [
         "ms_list_id" => $post["id"],
         "stage_id" => $nextStageId,
     ];
-    // if (!$stageDeal) {
-         $res = $msSignupList->Update($post["id"], $arFields);
-    //     if ($res) {
-    //         $list = $reviewerStage->GetList([], $arrFields2);
+    $listStage = $stage->GetList();
+    $stageLabel = '';
+    foreach ($listStage as $item) {
+        if ($item['stage_id'] == $nextStageId) {
+            $stageLabel = $item['label'];
+            break;
+        }
+    }
+    $res = $msSignupList->Update($post["id"], $arFields);
+    if ($res) {
+        $list = $reviewerStage->GetList([], $arrFields2);
+        $reviewerIds = array_map(function ($reviewer) {
+            return $reviewer["reviewer_id"];
+        }, $list);
 
-    //         $requestData = [
-    //             "id" => $post["id"],
-    //             "user_name" => $post["user_name"],
-    //             "user_email" => $post["user_email"],
-    //             "employee_id" => $post["employee_id"],
-    //             "department" => $post["department"],
-    //             "type_ms" => $post["type_ms"],
-    //             "team_ms" => $post["team_ms"],
-    //             "propose" => $post["propose"],
-    //         ];
+        
+        $requestData = [
+            "id" => $post["id"],
+            "user_name" => $post["user_name"],
+            "user_email" => $post["user_email"],
+            "employee_id" => $post["employee_id"],
+            "department" => $post["department"],
+            "type_ms" => $post["type_ms"],
+            "team_ms" => $post["team_ms"],
+            "propose" => $post["propose"],
+            "department_name" => $stageLabel,
+        ];
+        if (!$stageDeal && ($res['process_deal'] == null || empty(json_decode($res["process_deal"], true)))) {
+            if (!empty($reviewerIds)) {
+                $mailResult = $mailService->sendRequestNotification(
+                    "review",
+                    $reviewerIds,
+                    $requestData
+                );
+            }
+        } else if (($stageDeal || !empty(json_decode($res["process_deal"], true))) && $nextStageId != $post["max_stage"]) {
+            $arFilter = array(
+                'ms_list_id' => $post['id'],
+                'user_id' => $post['user_id'],
+            );
+            if ($stageDeal && !json_decode($res["process_deal"])) {
+                $arFilter['stage_id'] = $currStage;
+            } else {
+                $arFilter['stage_id'] = $nextStageId;
+            }
 
-    //         $reviewerIds = array_map(function ($reviewer) {
-    //             return $reviewer["reviewer_id"];
-    //         }, $list);
+            $res_c = $kpi->GetList(array(), $arFilter);
+            $newKpi = json_decode($res_c[0]['kpi'], true);
+            if (is_array($newKpi) && count($newKpi) > 0) {
+                $requestData['new_kpi'] = $newKpi;
+            }
 
-    //         $mailService = new MailService($config);
-
-    //         if (!empty($reviewerIds)) {
-    //             try {
-    //                 $mailResult = $mailService->sendRequestNotification(
-    //                     "review",
-    //                     $reviewerIds,
-    //                     $requestData
-    //                 );
-    //                 error_log(
-    //                     "Email notification result: " . json_encode($mailResult)
-    //                 );
-    //             } catch (Exception $e) {
-    //                 error_log(
-    //                     "Failed to send email notifications: " . $e->getMessage()
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
+            $arOrder = ['created_at' => 'DESC'];
+            $arFilter2 = array(
+                'kpi_id' => $res_c[0]['id'],
+                'stage_id' => $res_c[0]['stage_id'],
+                'is_temporary' => true
+            );
+            $res_h = $kpiHistory->GetList($arOrder, $arFilter2, array());
+            $oldKpi = json_decode($res_h[0]['old_kpi'], true);
+            if (is_array($oldKpi) && count($oldKpi) > 0) {
+                $requestData['old_kpi'] = $oldKpi;
+            }
+            $mailService->sendRequestNotification(
+                "review_kpi",
+                $reviewerIds,
+                $requestData
+            );
+        } else {
+            $list = $reviewerStage->GetList([], $arrFields2);
+            $reviewerIds = array_map(function ($reviewer) {
+                return $reviewer["reviewer_id"];
+            }, $list);
+            $mailService->sendRequestNotification(
+                "ms_review_kpi",
+                $reviewerIds,
+                $requestData
+            );
+        }
+    }
 
     http_response_code(200);
     echo json_encode([

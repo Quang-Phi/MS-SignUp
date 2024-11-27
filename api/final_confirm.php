@@ -36,67 +36,130 @@ try {
             exit();
         }
     }
+    if ($post["completed"] == false) {
+        $arFields = [
+            "status" => "success",
+            "completed" => true,
+            "join_date" => date("Y-m-d H:i:s"),
+        ];
+        $res = $msSignupList->Update($post["ms_list_id"], $arFields);
 
-    $arFields = [
-        "status" => "success",
-    ];
+        $user = new CUser();
+        $userCurrentDpmIds = json_decode($post["department_ids"], true);
 
-    $msSignupList->Update($post["ms_list_id"], $arFields);
+        $dpmIds = array_merge($userCurrentDpmIds, [$post["team_ms_id"]]);
+        $user->Update(
+            $post["user_id"],
+            [
+                "UF_DEPARTMENT" => array_unique($dpmIds),
+                $config["user_type_ms_field"] => $post["type_ms_id"],
+            ],
+        );
 
-    $user = new CUser();
-    $userCurrentDpmIds = json_decode($post["department_ids"], true);
+        $userId = intval($post["user_id"]);
+        $workgroup_ids = $config["workgroup_ms_ids"];
 
-    $dpmIds = array_merge($userCurrentDpmIds, [$post["team_ms_id"]]);
-    $user->Update(
-        $post["user_id"],
-        [
-            "UF_DEPARTMENT" => array_unique($dpmIds),
-            $config["user_type_ms_field"] => $post["type_ms_id"],
-        ],
-    );
+        foreach ($workgroup_ids as $workgroup_id) {
+            $userToGroup->Add([
+                "USER_ID" => $userId,
+                "GROUP_ID" => $workgroup_id,
+                "ROLE" => SONET_ROLES_USER,
+                "INITIATED_BY_TYPE" => SONET_INITIATED_BY_USER,
+                "INITIATED_BY_USER_ID" => $userId,
+                "MESSAGE" => "",
+                "SEND_MAIL" => "N",
+                "SEND_MESSAGE" => "N"
+            ]);
+        };
 
-    $userId = intval($post["user_id"]);
-    $workgroup_ids = $config["workgroup_ms_ids"];
+        $requestData = [
+            "id" => $post["id"],
+            "user_name" => $post["user_name"],
+            "user_email" => $post["user_email"],
+            "employee_id" => $post["employee_id"],
+            "department" => $post["department"],
+            "type_ms" => $post["type_ms"],
+            "team_ms" => $post["team_ms"],
+        ];
 
-    foreach ($workgroup_ids as $workgroup_id) {
-        $userToGroup->Add([
-            "USER_ID" => $userId,
-            "GROUP_ID" => $workgroup_id,
-            "ROLE" => SONET_ROLES_USER,
-            "INITIATED_BY_TYPE" => SONET_INITIATED_BY_USER,
-            "INITIATED_BY_USER_ID" => $userId,
-            "MESSAGE" => "",
-            "SEND_MAIL" => "N",
-            "SEND_MESSAGE" => "N"
-        ]);
-    };
-    $requestData = [];
+        $mailService = new MailService($config);
+        $mailService->sendRequestNotification(
+            'approval',
+            $post["user_id"],
+            $requestData
+        );
+        foreach ($config["send_mail_to"] as $key => $item) {
+            if (empty($item)) {
+                continue;
+            }
+            if (!empty($item['id'])) {
+                $mailService->sendRequestNotification(
+                    $key,
+                    $item['id'],
+                    $requestData
+                );
+            }
+            if (!empty($item['email'])) {
+                $mailService->sendRequestNotification(
+                    $key,
+                    $item['email'],
+                    $requestData
+                );
+            }
+        }
 
-    $mailService = new MailService($config);
-    $mailService->sendRequestNotification(
-        'approval',
-        $post["user_id"],
-        $requestData
-    );
-    // foreach ($config["send_mail_to"] as $key => $item) {
-    //     if (empty($item)) {
-    //         continue;
-    //     }
-    //     if (!empty($item['id'])) {
-    //         $mailService->sendRequestNotification(
-    //             $key,
-    //             $item['id'],
-    //             $requestData
-    //         );
-    //     }
-    //     if (!empty($item['email'])) {
-    //         $mailService->sendRequestNotification(
-    //             $key,
-    //             $item['email'],
-    //             $requestData
-    //         );
-    //     }
-    // }
+        $reviewerIds = [];
+        $arrFields2 = [
+            "ms_list_id" => $post["id"],
+        ];
+        $stage = intval($post["stage_id"]);
+        $list = $reviewerStage->GetList([], $arrFields2);
+        $reviewerIds = array_column(
+            array_filter($list, function ($item) use ($stage) {
+                return $item["stage_id"] < $stage;
+            }),
+            "reviewer_id"
+        );
+        $reviewerIds = array_unique($reviewerIds);
+
+        $requestData = [
+            "id" => $post["id"],
+            "user_name" => $post["user_name"],
+            "user_email" => $post["user_email"],
+            "employee_id" => $post["employee_id"],
+            "department" => $post["department"],
+            "type_ms" => $post["type_ms"],
+            "team_ms" => $post["team_ms"],
+        ];
+
+        if (!empty($reviewerIds)) {
+            try {
+                $mailResult = $mailService->sendRequestNotification(
+                    "approval_notification",
+                    $reviewerIds,
+                    $requestData
+                );
+                error_log(
+                    "Email notification result: " . json_encode($mailResult)
+                );
+            } catch (Exception $e) {
+                error_log(
+                    "Failed to send email notifications: " . $e->getMessage()
+                );
+            }
+        }
+    } else {
+        $arFields = [
+            "status" => "success",
+        ];
+        if ($post["flag_edit_3"] == true) {
+            $arFields["flag_edit_3"] = false;
+        }
+        if ($post["flag_edit_4"] == true) {
+            $arFields["flag_edit_4"] = false;
+        }
+        $msSignupList->Update($post["ms_list_id"], $arFields);
+    }
 
     http_response_code(200);
     echo json_encode([
