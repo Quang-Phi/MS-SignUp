@@ -470,7 +470,7 @@ class EmailTemplates
                    <li>Mã nhân viên: {$requestData['employee_id']}</li>
                    <li>Phòng ban: {$requestData['department']}</li>
                    <li>Team MS: {$requestData['team_ms']}</li>
-                   <li>Phân loại MS: {$requestData['type_ms']}</li>\
+                   <li>Phân loại MS: {$requestData['type_ms']}</li>
                </ul>
                
                <p>Xem thông tin chi tiết trực tiếp qua hệ thống Bitrix tại:
