@@ -12,6 +12,7 @@
       const flag = ref(false);
       const editKpiMSA = ref(false);
       const editKpiHR = ref(false);
+      const drawer = ref(false);
       const form = ref({});
       const tableRef = ref(null);
       const tableData = ref([]);
@@ -1272,7 +1273,11 @@
         }
       }
 
-      onMounted(async () => {
+      const handleClickShowAll = () => {
+        drawer.value = true;
+      }
+
+       onMounted(async () => {
         const url = new URL(window.location.href);
         const id = url.searchParams.get('id');
         const tab = url.searchParams.get('tab');
@@ -1426,7 +1431,9 @@
         checkShowKPI,
         getClass,
         tableRef,
-        checkShowDelete
+        checkShowDelete,
+        handleClickShowAll,
+        drawer,
       }
     }
   });

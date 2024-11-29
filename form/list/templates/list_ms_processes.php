@@ -5,7 +5,7 @@
 <div :class="showFormKPI ? 'overlay active' : 'overlay'" @click="hideOverlay()"></div>
 <div :class="showKPI ? 'overlay_kpi active' : 'overlay_kpi'" @click="hideKPIsMember()"></div>
 
-<div class="list-ms-processes">
+<div class="list-ms-processes" style="position: relative;">
     <el-tabs v-model="activeName" @tab-click="handleClick">
         <el-tab-pane label="Chờ xét duyệt" name="pending" class="tab-pane-pending">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -284,6 +284,9 @@
             </div>
         </el-tab-pane>
     </el-tabs>
+    <div class="tab-extra" style="margin-top: 8px; position: absolute; right: 0; top: 0">
+        <el-button type="primary" @click="handleClickShowAll()">Mục tiêu MS</el-button>
+    </div>
 </div>
 
 <div :class="showFormKPI ? 'form-kpi active' : 'form-kpi'">
@@ -369,7 +372,7 @@
                             <template #default="scope">
                                 <el-button
                                     link
-                                    :disabled="!checkShowDelete(scope.row.program)"  
+                                    :disabled="!checkShowDelete(scope.row.program)"
                                     type="primary"
                                     size="small"
                                     @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
@@ -600,7 +603,7 @@
                                     link
                                     type="primary"
                                     size="small"
-                                    :disabled="!checkShowDelete(scope.row.program)"  
+                                    :disabled="!checkShowDelete(scope.row.program)"
                                     @click.prevent="deleteRow(scope.$index, scope.row.program)">
                                     Xoá
                                 </el-button>
@@ -780,7 +783,7 @@
                                     link
                                     type="primary"
                                     size="small"
-                                    :disabled="!checkShowDelete(scope.row.program)"  
+                                    :disabled="!checkShowDelete(scope.row.program)"
                                     @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
                                     Xoá
                                 </el-button>
@@ -1077,3 +1080,20 @@
         </el-tab-pane>
     </el-tabs>
 </div>
+
+<el-drawer
+    title="I am the title"
+    v-model="drawer"
+    :with-header="false"
+    style="overflow: unset">
+    <div class="side-panel-labels">
+        <div class="side-panel-label" style="max-width: 215px;">
+            <div class="side-panel-label-icon-box" title="Close" @click="drawer = false">
+                <div class="side-panel-label-icon side-panel-label-icon-close"></div>
+            </div><span class="side-panel-label-text"></span>
+        </div>
+    </div>
+    <div class="content">
+    
+    </div>
+</el-drawer>
