@@ -2,6 +2,7 @@
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi_history.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -10,6 +11,7 @@ header('Access-Control-Allow-Methods: POST');
 try {
     $kpi = new Kpi();
     $kpiHistory = new kpiHistory();
+    $msSignupList = new MsSignupList($config);
 
     $formData = json_decode(file_get_contents('php://input'), true);
     $stageDeal = json_decode($formData["stage_deal"], true);
@@ -29,6 +31,22 @@ try {
         return ($formData['curr_month'] == 12 ? $formData['next_year'] : $formData['year']);
     }
 
+    if ($formData['status'] != 'success') {
+        $currentData = $msSignupList->GetById($formData['ms_list_id']);
+        if (
+            ($currentData && $currentData["stage_id"] !== $formData["stage_id"]) ||
+            $currentData["status"] !== "pending"
+        ) {
+            http_response_code(200);
+            echo json_encode([
+                "success" => false,
+                "error" =>
+                "This record has been processed to different stage. Please refresh the page.",
+                "code" => "STAGE_MISMATCH",
+            ]);
+            exit();
+        }
+    }
 
     $isAddHistory = false;
     if (is_array($stageDeal) && count($stageDeal) > 0) {

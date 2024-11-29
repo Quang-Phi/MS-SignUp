@@ -2,6 +2,7 @@
 require_once $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi.php';
 require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi_history.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -10,6 +11,8 @@ header('Access-Control-Allow-Methods: GET');
 try {
     $kpi = new Kpi();
     $msSignupList = new MsSignupList(env: $config);
+    $kpiHistory = new kpiHistory();
+
     $arFilter = array(
         'user_id' => $_GET['user_id'] ?? null,
         'stage_id' => $_GET['stage_id'] ?? null
@@ -20,7 +23,7 @@ try {
             'user_id' => $_GET['user_id'],
         );
         $order = array(
-            'created_at' => 'asc'
+            'created_at' => 'desc'
         );
 
         $list = $msSignupList->GetList($order, $arr);
@@ -37,11 +40,16 @@ try {
     }
     $data = $kpi->GetList(array(), $arFilter);
 
+    $arFilterHistory = array(
+        'kpi_id' => $data[0]['id'],
+        'stage_id' => $data[0]['stage_id']
+    );
+    $history = $kpiHistory->GetList(array('created_at' => 'DESC'), $arFilterHistory);
     http_response_code(200);
     echo json_encode([
         'success' => true,
-        'arr' => $arFilter,
         'data' => $data,
+        'history' => $history[0] ? [$history[0]] : null,
         'timestamp' => time()
     ]);
 } catch (ApiException $e) {

@@ -24,15 +24,39 @@ try {
     $post = json_decode($jsonData, true);
 
     $stageDeal = json_decode($post["stage_deal"], true);
+    $currentData = $msSignupList->GetById($post["id"]);
+
+    if ($currentData['stage_id'] == 3  &&  $post['tempo_stage'] == 4) {
+        array_push($stageDeal, $currentData['stage_id']);
+        array_unique($stageDeal);
+        sort($stageDeal);
+    }
+
     $currStage = $stageDeal[0];
     $nextStageId = null;
 
     $arFields = array();
-    if (isset($post["id"]) && empty($stageDeal)) {
-        $currentData = $msSignupList->GetById($post["id"]);
 
+    if ($post['status'] != 'success') {
+        if (
+            ($currentData && $currentData["stage_id"] !== $post["stage_id"]) ||
+            $currentData["status"] !== "pending"
+        ) {
+            http_response_code(200);
+            echo json_encode([
+                "success" => false,
+                "error" =>
+                "This record has been processed to different stage. Please refresh the page.",
+                "code" => "STAGE_MISMATCH",
+            ]);
+            exit();
+        }
+    }
+
+    if (empty($stageDeal)) {
         if ($currentData["process_deal"] && !empty(json_decode($currentData["process_deal"], true))) {
             $arr = json_decode($currentData["process_deal"], true);
+            array_unique($arr);
             sort($arr);
             $nextStageId = $arr[0];;
             array_shift($arr);
@@ -41,25 +65,12 @@ try {
                 "stage_id" => $nextStageId
             ];
         } else {
-            if (
-                ($currentData && $currentData["stage_id"] !== $post["stage_id"]) ||
-                $currentData["status"] !== "pending"
-            ) {
-                http_response_code(200);
-                echo json_encode([
-                    "success" => false,
-                    "error" =>
-                    "This record has been processed to different stage. Please refresh the page.",
-                    "code" => "STAGE_MISMATCH",
-                ]);
-                exit();
-            }
             $nextStageId = intval($post["stage_id"]) + 1;
             $arFields["stage_id"] = $nextStageId;
         }
-    }
-    if (!empty($stageDeal)) {
+    } else {
         array_push($stageDeal, $post["max_stage"]);
+        array_unique($stageDeal);
         sort($stageDeal);
         $nextStageId = $stageDeal[0];
         array_shift($stageDeal);
@@ -97,7 +108,7 @@ try {
             return $reviewer["reviewer_id"];
         }, $list);
 
-        
+
         $requestData = [
             "id" => $post["id"],
             "user_name" => $post["user_name"],

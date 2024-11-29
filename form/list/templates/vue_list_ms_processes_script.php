@@ -13,6 +13,7 @@
       const editKpiMSA = ref(false);
       const editKpiHR = ref(false);
       const form = ref({});
+      const tableRef = ref(null);
       const tableData = ref([]);
       const tableDataKpi = ref([]);
       const tableDataKpiMSA = ref([]);
@@ -28,6 +29,9 @@
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const teamMsMember = ref([]);
+      const historyDataKpi = ref([]);
+      const historyDataKpiMSA = ref([]);
+      const historyDataKpiHR = ref([]);
       const count = ref({});
       const noMore = ref({});
       const timelineData = ref({});
@@ -38,7 +42,7 @@
       // const currMonth = ref(new Date().getMonth() + 1);
       // const currYear = ref(new Date().getFullYear());
       const currMonth = ref(1);
-      const currYear = ref(2025);
+      const currYear = ref(2028);
       const nextYear = ref(new Date().getFullYear() + 1);
       const isEdit = ref(false);
       const loading = ref(false);
@@ -256,7 +260,7 @@
         }, 1000);
       }
 
-      const handleApprove = async (row, paramsApprove = null, message = true) => {
+      const handleApprove = async (row, paramsApprove = null, message = true, reload = false) => {
         try {
           if (row?.id) {
             approveLoading.value[row.id] = true;
@@ -275,11 +279,13 @@
 
           if (response.data.success) {
             message && showNotification('success', 'Xét duyệt thành công');
-            reloadPage();
+            reload && reloadPage();
+            return true;
           } else {
             if (response.data.code === 'STAGE_MISMATCH') {
               showNotification('warning', 'Yêu cầu này đã được xử lý. Trang sẽ được tải lại.');
-              reloadPage();
+              reload && reloadPage();
+              return true;
             } else {
               if (row?.id) {
                 approveLoading.value[row.id] = false;
@@ -287,6 +293,7 @@
               loading.value = false;
               loadingKPI.value = false;
               showNotification('error', 'Có lỗi xảy ra khi xét duyệt');
+              return false;
             }
           }
         } catch (error) {
@@ -301,6 +308,7 @@
           loading.value = false;
           loadingKPI.value = false;
           showNotification('error', errorMessage);
+          return false;
         }
       };
 
@@ -535,12 +543,19 @@
 
         if (hasKpi) {
           tableDataKpi.value = [];
-          await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id, 'main', year);
+          const res = await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id, 'main', year);
+          if (res) {
+            getDeletedPrograms();
+          }
         }
 
-        if (form.value.stage_id == 4 && tableDataKpi.value.length == 0) {
-          tableDataKpi.value = [];
-          onAddItem('KPI');
+        if (form.value.stage_id == 4) {
+          tableDataKpiMSA.value = [];
+          await getUserKpi(rowData.id, rowData.user_id, 3, 'MSA', year);
+
+          if (tableDataKpi.value.length == 0) {
+            onAddItem('KPI');
+          }
         }
 
         loadingKPI.value = false;
@@ -568,15 +583,19 @@
 
       const getUserKpi = async (ms_list_id, user_id, stage_id, type = "main", year = null) => {
         let baseTable = [];
+        let historyTable = null;
         switch (type) {
           case 'main':
             baseTable = tableDataKpi;
+            historyTable = historyDataKpi
             break;
           case 'MSA':
             baseTable = tableDataKpiMSA;
+            historyTable = historyDataKpiMSA
             break;
           case 'HR':
             baseTable = tableDataKpiHR;
+            historyTable = historyDataKpiHR
             break;
           case 'member_HR':
             baseTable = tableDataKpiMemberHR;
@@ -628,13 +647,34 @@
                   break;
               }
             });
+
+            if (data.history && historyTable) {
+              data.history.forEach(element => {
+                JSON.parse(element.old_kpi).forEach(element => {
+                  if (element.program) {
+                    const newRow = {
+                      program: element.program,
+                    };
+                    for (let i = 1; i <= 12; i++) {
+                      newRow[`m${i}`] = element[`m${i}`];
+                    }
+                    historyTable.value.push(newRow);
+                  }
+                });
+
+              });
+
+            }
+            return true;
           } else {
             console.error('API Error:', data.message);
             baseTable.value = [];
+            return false;
           }
         } catch (error) {
           console.error('Error fetching:', error);
           baseTable.value = [];
+          return false;
         }
       }
 
@@ -773,13 +813,23 @@
           if (response.data.success) {
             return true;
           } else {
-            showNotification('error', response.data.message || 'Có lỗi xảy ra khi tạo KPI');
-            return false;
+            if (response.data.code === 'STAGE_MISMATCH') {
+              return true;
+            } else {
+              showNotification('error', response.data.message || 'Có lỗi xảy ra khi tạo KPI');
+              return false;
+            }
+
           }
         } catch (error) {
-          tableData.value = {};
-          showNotification('error', error.message || 'Có lỗi xảy ra khi tạo KPI');
-          return false;
+          if (response.data.code === 'STAGE_MISMATCH') {
+            return true;
+          } else {
+            tableData.value = {};
+            showNotification('error', error.message || 'Có lỗi xảy ra khi tạo KPI');
+            return false;
+          }
+
         }
       }
 
@@ -890,7 +940,12 @@
           } else {
             loading.value = false;
             loadingKPI.value = false;
-            showNotification('error', response.data.message || 'Có lỗi xảy ra khi đăng ký MS');
+            if (response.data.code === 'STAGE_MISMATCH') {
+              showNotification('warning', 'Yêu cầu này đã được xử lý. Trang sẽ được tải lại.');
+              reloadPage();
+            } else {
+              showNotification('error', response.data.message || 'Có lỗi xảy ra khi đăng ký MS');
+            }
           }
 
         } catch (error) {
@@ -910,6 +965,9 @@
           isEdit.value = false;
           activeNames.value = [];
           stageDeal.value = [];
+          createdProgram.value = [];
+          createdProgramHR.value = [];
+          createdProgramMSA.value = [];
           listProposer.value.forEach((item) => {
             resetTimeline(item.stage_id);
           });
@@ -980,7 +1038,10 @@
           }
           if (form.value.status === 'success' || form.value.completed == true) {
             editKpiMSA.value ? form.value.flag_edit_3 = true : null;
-            editKpiHR.value ? form.value.flag_edit_4 = true : null;
+            if (editKpiHR.value) {
+              form.value.flag_edit_4 = true;
+              form.value.tempo_stage = 4;
+            }
             if (editKpiMSA.value && validateTableKpiMSAData() !== true) {
               showNotification('error', validateTableKpiMSAData());
               loading.value = false;
@@ -1004,8 +1065,11 @@
               propose: form.value.list_propose,
               stage_deal: JSON.stringify(stageDeal.value)
             }
-            await handleApprove(null, params, false);
-            resetArr ? showNotification('success', 'Chưa có KPI, đã gửi yêu cầu thêm KPI mới.') : showNotification('success', 'Gửi yêu cầu điều chỉnh thành công.');
+            const res = await handleApprove(null, params, false);
+            if (res === true) {
+              resetArr ? showNotification('success', 'Chưa có KPI, đã gửi yêu cầu thêm KPI mới.') : showNotification('success', 'Gửi yêu cầu điều chỉnh thành công.');
+              reloadPage();
+            }
           }
 
         } catch (error) {
@@ -1050,7 +1114,7 @@
               } else {
                 return prev;
               }
-            }, 0).toFixed(2);
+            }, 0).toFixed(1);
           } else {
             sums[index] = '';
           }
@@ -1145,7 +1209,7 @@
       }
 
       const checkViewerMemberKpi = (form) => {
-        const arr = form.reviewers.filter(reviewer => reviewer.stage_id === parseInt(form.max_stage));
+        const arr = form.reviewers.filter(reviewer => parseInt(reviewer.stage_id) !== parseInt(form.max_stage));
         const reviewers = arr.map(reviewer => reviewer.reviewer_id);
         return msaIds.includes(userId) || hrIds.includes(userId) || reviewers.includes(userId);
       }
@@ -1161,6 +1225,70 @@
           return false;
         }
         return true;
+      }
+
+      const getClass = (program, value, month, stage = null) => {
+        let table = null;
+        stage ? stage == 3 ? table = "MSA" : table = "HR" : table = null;
+        let baseTable = [];
+        switch (table) {
+          case 'MSA':
+            baseTable = historyDataKpiMSA.value;
+            break;
+          case 'HR':
+            baseTable = historyDataKpiHR.value;
+            break;
+          default:
+            baseTable = historyDataKpi.value;
+        }
+        if (value >= 0 && month) {
+          const historyItem = baseTable.find((h) => h.program === program);
+          if (historyItem) {
+            const oldValue = Number(historyItem[`m${month}`]);
+            const newValue = Number(value) || 0;
+            if (newValue > oldValue) {
+              return 'increase';
+            } else if (newValue < oldValue) {
+              return 'decrease';
+            } else {
+              return 'no-change';
+            }
+          } else {
+            if (value > 0) {
+              return 'increase';
+            }else if (value < 0) {
+              return 'no-change';
+            }
+          }
+        }
+      }
+
+      const getDeletedPrograms = () => {
+        const deletedPrograms = historyDataKpi.value.filter((h) => !tableDataKpi.value.find((t) => t.program === h.program));
+        console.log('deletedPrograms', deletedPrograms)
+        deletedPrograms.forEach((program) => {
+          const rowHTML = `
+            <tr class="deleted el-table__row">
+              <td><div class="cell">${program.program}</div></td>
+              <td><div class="cell">${program.m1}</div></td>
+              <td><div class="cell">${program.m2}</div></td>
+              <td><div class="cell">${program.m3}</div></td>
+              <td><div class="cell">${program.m4}</div></td>
+              <td><div class="cell">${program.m5}</div></td>
+              <td><div class="cell">${program.m6}</div></td>
+              <td><div class="cell">${program.m7}</div></td>
+              <td><div class="cell">${program.m8}</div></td>
+              <td><div class="cell">${program.m9}</div></td>
+              <td><div class="cell">${program.m10}</div></td>
+              <td><div class="cell">${program.m11}</div></td>
+              <td><div class="cell">${program.m12}</div></td>
+            </tr>
+          `;
+
+          let table = document.querySelector('.el-table__body');
+          let tbody = table.querySelector('tbody');
+          tbody.innerHTML += rowHTML;
+        });
       }
 
       onMounted(async () => {
@@ -1196,7 +1324,7 @@
         });
       });
 
-      const submitForm = async ($type) => {
+      const submitForm = async () => {
         loading.value = true;
         loadingKPI.value = true;
         $data = {
@@ -1213,14 +1341,20 @@
         if (isEdit.value) {
           const res = await handleCreateKpi();
           if (res) {
-            await handleApprove($data);
+            const result = await handleApprove($data);
+            if (result === true) {
+              reloadPage();
+            }
           } else {
             loadingKPI.value = false;
             loading.value = false;
           }
           return;
         }
-        await handleApprove($data);
+        const result = await handleApprove($data);
+        if (result === true) {
+          reloadPage();
+        }
       };
 
       return {
@@ -1308,7 +1442,9 @@
         loadingMemberKPI,
         loadingKPI,
         checkViewerMemberKpi,
-        checkShowKPI
+        checkShowKPI,
+        getClass,
+        tableRef,
       }
     }
   });

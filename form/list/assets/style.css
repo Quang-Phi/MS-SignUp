@@ -189,6 +189,10 @@
   place-self: flex-end !important;
 }
 
+.list-ms-processes {
+  padding-top: 8px;
+}
+
 .infinite-list-wrapper {
   margin: 16px 0;
 }
@@ -258,4 +262,21 @@
   100% {
     clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0);
   }
+}
+
+.form-table-msa .el-table__body-wrapper {
+  display: none;
+}
+
+.el-input.increase .el-input__wrapper {
+  background-color: #d2febc !important;
+}
+
+.el-input.decrease .el-input__wrapper {
+  background-color: #ffc8c8 !important;
+}
+
+.el-table thead th.el-table__cell {
+  background: #21498f !important;
+  color: #fff;
 }

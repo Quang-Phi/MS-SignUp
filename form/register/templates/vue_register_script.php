@@ -45,10 +45,10 @@
             });
 
             const listPropose = ref([
-                "Quyền truy cập CRM",
-                "Gia nhập nhóm email MS",
-                "Thêm vào danh sách MS",
-                "Line tổng đài Omical",
+                "Quyền truy cập CRM (DCC)",
+                "Gia nhập nhóm email MS (HR)",
+                "Thêm vào nhóm và phòng ban MS (HR)",
+                "Line tổng đài Omical (ICT)",
                 "Tai nghe",
                 "Webcam",
                 "SIM Zalo (có 4G)"
