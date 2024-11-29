@@ -355,7 +355,7 @@
                             </el-table-column>
                         </template>
 
-                        <el-table-column fixed="right" label="Tổng" min-width="90">
+                        <el-table-column fixed="right" label="Tổng" min-width="60">
                             <template #default="scope">
                                 {{ calculateRowTotal(scope.row) }}
                             </template>
@@ -369,6 +369,7 @@
                             <template #default="scope">
                                 <el-button
                                     link
+                                    :disabled="!checkShowDelete(scope.row.program)"  
                                     type="primary"
                                     size="small"
                                     @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
@@ -583,7 +584,7 @@
                             </el-table-column>
                         </template>
 
-                        <el-table-column fixed="right" label="Tổng" min-width="90">
+                        <el-table-column fixed="right" label="Tổng" min-width="60">
                             <template #default="scope">
                                 {{ calculateRowTotal(scope.row) }}
                             </template>
@@ -599,6 +600,7 @@
                                     link
                                     type="primary"
                                     size="small"
+                                    :disabled="!checkShowDelete(scope.row.program)"  
                                     @click.prevent="deleteRow(scope.$index, scope.row.program)">
                                     Xoá
                                 </el-button>
@@ -762,7 +764,7 @@
                             </el-table-column>
                         </template>
 
-                        <el-table-column fixed="right" label="Tổng" min-width="90">
+                        <el-table-column fixed="right" label="Tổng" min-width="60">
                             <template #default="scope">
                                 {{ calculateRowTotal(scope.row) }}
                             </template>
@@ -778,6 +780,7 @@
                                     link
                                     type="primary"
                                     size="small"
+                                    :disabled="!checkShowDelete(scope.row.program)"  
                                     @click.prevent="deleteRow(scope.$index, scope.row.program, proposer.label)">
                                     Xoá
                                 </el-button>
@@ -944,7 +947,7 @@
                                     </template>
                                 </el-table-column>
                             </template>
-                            <el-table-column fixed="right" label="Tổng" min-width="90">
+                            <el-table-column fixed="right" label="Tổng" min-width="60">
                                 <template #default="scope">
                                     {{ calculateRowTotal(scope.row) }}
                                 </template>
@@ -1063,7 +1066,7 @@
                             </el-table-column>
                         </template>
 
-                        <el-table-column fixed="right" label="Tổng" min-width="90">
+                        <el-table-column fixed="right" label="Tổng" min-width="60">
                             <template #default="scope">
                                 {{ calculateRowTotal(scope.row) }}
                             </template>

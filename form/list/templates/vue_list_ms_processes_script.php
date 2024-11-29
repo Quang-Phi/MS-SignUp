@@ -26,6 +26,7 @@
       const createdProgram = ref([]);
       const createdProgramMSA = ref([]);
       const createdProgramHR = ref([]);
+      const addProgram = ref([]);
       const selectedProgram = ref('');
       const listProposer = ref([]);
       const teamMsMember = ref([]);
@@ -422,11 +423,21 @@
         }
       }
 
+      const checkShowDelete = (program) => {
+        if (addProgram.value.includes(program)) {
+          return true;
+        } else {
+          return false
+        }
+      }
+
       const onAddItem = (program, table) => {
         switch (table) {
           case 'MSA':
             if (!createdProgramMSA.value.includes(program)) {
               createdProgramMSA.value.push(program)
+              addProgram.value.push(program)
+
               const newRow = {
                 program: program,
               };
@@ -454,7 +465,8 @@
             break;
           default:
             if (!createdProgram.value.includes(program)) {
-              createdProgram.value.push(program)
+              createdProgram.value.push(program);
+              addProgram.value.push(program);
               const newRow = {
                 program: program,
               };
@@ -518,7 +530,6 @@
             }
           });
           const responses = await Promise.all(promises);
-
           if (currMonth.value === 12 && rowData.status === 'pending') {
             listProposer.value.forEach(element => {
               if (element.label == 'MSA' || element.label == 'HR') {
@@ -544,9 +555,6 @@
         if (hasKpi) {
           tableDataKpi.value = [];
           const res = await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id, 'main', year);
-          if (res) {
-            getDeletedPrograms();
-          }
         }
 
         if (form.value.stage_id == 4) {
@@ -777,7 +785,7 @@
             case 'HR':
               const parts = value.split('.');
               if (parts.length > 1) {
-                value = parts[0] + '.' + parts[1].substring(0, 1);
+                value = parts[0] + '.' + parts[1].substring(0, 2);
               }
               if (!tableDataKpiHR.value[index]) {
                 tableDataKpiHR.value[index] = {};
@@ -794,7 +802,7 @@
               if (proposer.stage_id == 4) {
                 const parts = value.split('.');
                 if (parts.length > 1) {
-                  value = parts[0] + '.' + parts[1].substring(0, 1);
+                  value = parts[0] + '.' + parts[1].substring(0, 2);
                 }
               }
               tableDataKpi.value[index] = {
@@ -1102,7 +1110,8 @@
           }
 
           const values = data.map(item => {
-            const coefficient = coefficients[item.program] || 1;
+            const id = Object.keys(listProgram).find(key => listProgram[key] === item.program);
+            const coefficient = coefficients[id] || 1;
             return (Number(item[column.property]) || 0) * coefficient;
           });
 
@@ -1114,7 +1123,7 @@
               } else {
                 return prev;
               }
-            }, 0).toFixed(1);
+            }, 0).toFixed(2);
           } else {
             sums[index] = '';
           }
@@ -1256,39 +1265,11 @@
           } else {
             if (value > 0) {
               return 'increase';
-            }else if (value < 0) {
+            } else if (value < 0) {
               return 'no-change';
             }
           }
         }
-      }
-
-      const getDeletedPrograms = () => {
-        const deletedPrograms = historyDataKpi.value.filter((h) => !tableDataKpi.value.find((t) => t.program === h.program));
-        console.log('deletedPrograms', deletedPrograms)
-        deletedPrograms.forEach((program) => {
-          const rowHTML = `
-            <tr class="deleted el-table__row">
-              <td><div class="cell">${program.program}</div></td>
-              <td><div class="cell">${program.m1}</div></td>
-              <td><div class="cell">${program.m2}</div></td>
-              <td><div class="cell">${program.m3}</div></td>
-              <td><div class="cell">${program.m4}</div></td>
-              <td><div class="cell">${program.m5}</div></td>
-              <td><div class="cell">${program.m6}</div></td>
-              <td><div class="cell">${program.m7}</div></td>
-              <td><div class="cell">${program.m8}</div></td>
-              <td><div class="cell">${program.m9}</div></td>
-              <td><div class="cell">${program.m10}</div></td>
-              <td><div class="cell">${program.m11}</div></td>
-              <td><div class="cell">${program.m12}</div></td>
-            </tr>
-          `;
-
-          let table = document.querySelector('.el-table__body');
-          let tbody = table.querySelector('tbody');
-          tbody.innerHTML += rowHTML;
-        });
       }
 
       onMounted(async () => {
@@ -1445,6 +1426,7 @@
         checkShowKPI,
         getClass,
         tableRef,
+        checkShowDelete
       }
     }
   });

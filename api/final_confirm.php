@@ -151,6 +151,7 @@ try {
     } else {
         $arFields = [
             "status" => "success",
+            "process_deal"=> null
         ];
         $arrFields2 = [
             "ms_list_id" => $post["id"],
