@@ -285,7 +285,7 @@
         </el-tab-pane>
     </el-tabs>
     <div class="tab-extra" style="margin-top: 8px; position: absolute; right: 0; top: 0">
-        <el-button type="primary" @click="handleClickShowAll()">Mục tiêu MS</el-button>
+        <el-button type="primary" @click="handleClickShowGoal()"><span v-html="goalText"></span></el-button>
     </div>
 </div>
 
@@ -545,6 +545,7 @@
                                 <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                     <template #default="scope">
                                         <el-input
+                                            class="custom"
                                             :disabled="true"
                                             size="small"
                                             v-model="scope.row[`m${month}`]"
@@ -757,6 +758,7 @@
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
+                                        class="custom"
                                         :disabled="proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
@@ -922,7 +924,7 @@
             </div>
 
             <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
-                <div v-if="proposer.stage_id <= form.stage_id || (proposer.stage_id == 3 ? count(tableDataKpiMSA) > 0 : count(tableDataKpiHR) > 0)">
+                <div v-if="proposer.stage_id <= form.stage_id || (proposer.stage_id == 3 ? count(tableDataKpiMSA) > 0 : false)">
                     <el-form-item label="Bảng KPI:" prop="stage">
                         <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == proposer.stage_id).reviewer_id}/`" target="_blank">
                             <span v-html="textReviewerName2(proposer)"></span>
@@ -942,6 +944,7 @@
                                 <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                     <template #default="scope">
                                         <el-input
+                                            class="custom"
                                             :disabled="true"
                                             size="small"
                                             v-model="scope.row[`m${month}`]"
@@ -1059,6 +1062,7 @@
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
+                                        class="custom" 
                                         :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
@@ -1082,10 +1086,9 @@
 </div>
 
 <el-drawer
-    title="I am the title"
     v-model="drawer"
     :with-header="false"
-    style="overflow: unset">
+    style="overflow: unset;">
     <div class="side-panel-labels">
         <div class="side-panel-label" style="max-width: 215px;">
             <div class="side-panel-label-icon-box" title="Close" @click="drawer = false">
@@ -1094,6 +1097,36 @@
         </div>
     </div>
     <div class="content">
-    
+        <div class="table-control" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div class="title" v-html="titleGoal"></div>
+            <div class="block">
+                <el-date-picker
+                    v-model="datePicker"
+                    @change="handlePickMonth"
+                    type="monthrange"
+                    range-separator="-"
+                    start-placeholder="Tháng bắt đầu"
+                    end-placeholder="Tháng kết thúc">
+                </el-date-picker>
+            </div>
+        </div>
+        <el-table
+            :data="tableDataAll"
+            style="width: 100%">
+            <el-table-column fixed prop="user_name" label="MS" min-width="150">
+                <template #default="scope">
+                    <a :href="`${urlUserInfo}/${scope.row.user_id}/`" target="_blank">
+                        {{ scope.row.user_name }}
+                    </a>
+                </template>
+            </el-table-column>
+
+            <el-table-column
+                v-for="program in listProgram" :key="program"
+                :prop="program"
+                :label="program"
+                width="150">
+            </el-table-column>
+        </el-table>
     </div>
 </el-drawer>

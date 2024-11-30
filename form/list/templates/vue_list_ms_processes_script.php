@@ -23,6 +23,7 @@
       const oldDataKpiHR = ref([]);
       const tableDataKpiMemberHR = ref([]);
       const tableDataKpiMemberMSA = ref([]);
+      const tableDataAll = ref([]);
       const showFormKPI = ref(false);
       const createdProgram = ref([]);
       const createdProgramMSA = ref([]);
@@ -41,10 +42,8 @@
       const activeNames = ref('pending');
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
-      // const currMonth = ref(new Date().getMonth() + 1);
-      // const currYear = ref(new Date().getFullYear());
-      const currMonth = ref(1);
-      const currYear = ref(2028);
+      const currMonth = ref(new Date().getMonth() + 1);
+      const currYear = ref(new Date().getFullYear());
       const nextYear = ref(new Date().getFullYear() + 1);
       const isEdit = ref(false);
       const loading = ref(false);
@@ -62,6 +61,7 @@
       const activeName = ref('pending');
       const activeNameKpi = ref(null);
       const showKPI = ref(false);
+      const datePicker = ref(null);
       let userId = <?= json_encode($userID ?? "") ?>;
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
@@ -78,8 +78,15 @@
       const timelineLoadingText = `Đang lấy dữ liệu...`;
       const noMoreText = `Không còn dữ liệu`;
       const textBtn4 = `Điều chỉnh KPI`;
+      const goalText = `Mục tiêu MS`;
+      const goalYear = ref(new Date().getFullYear());
+
       const textReviewerName = computed(() => {
         return `<span>${form.value.stage}</span>`
+      })
+
+      const titleGoal = computed(() => {
+        return `<span>Mục tiêu MS năm: ${goalYear.value}</span>`
       })
 
       const textReviewerName2 = computed(() => {
@@ -280,7 +287,7 @@
           const response = await axios.post('../../api/approve_ms_register.php', params);
 
           if (response.data.success) {
-            message && showNotification('success', 'Xét duyệt thành công');
+            message && showNotification('success', 'Xét duyệt thành công.');
             reload && reloadPage();
             return true;
           } else {
@@ -294,16 +301,16 @@
               }
               loading.value = false;
               loadingKPI.value = false;
-              showNotification('error', 'Có lỗi xảy ra khi xét duyệt');
+              showNotification('error', 'Có lỗi xảy ra khi xét duyệt.');
               return false;
             }
           }
         } catch (error) {
-          let errorMessage = 'Có lỗi xảy ra khi xét duyệt';
+          let errorMessage = 'Có lỗi xảy ra khi xét duyệt.';
           if (error.response) {
             errorMessage = error.response.data?.error || errorMessage;
           } else if (error.request) {
-            errorMessage = 'Không thể kết nối đến server';
+            errorMessage = 'Không thể kết nối đến server.';
           } else {
             errorMessage = error.message;
           }
@@ -443,7 +450,7 @@
                 program: program,
               };
               for (let i = 1; i <= 12; i++) {
-                newRow[`m${i}`] = 0;
+                newRow[`m${i}`] = '';
               }
               tableDataKpiMSA.value.push(newRow);
             } else {
@@ -518,7 +525,7 @@
             year = currYear.value;
             break;
         }
-        if (Number(rowData.stage_id) === Number(rowData.max_stage)) {
+        if (Number(rowData.stage_id) === Number(rowData.max_stage) && rowData.status !== 'error') {
           flag.value = true;
           await getListProposer();
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
@@ -552,6 +559,10 @@
           loadingKPI.value = false;
           return;
         }
+        if (rowData.status === 'error') {
+          await getListProposer();
+          listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
+        }
 
         if (hasKpi) {
           tableDataKpi.value = [];
@@ -566,7 +577,6 @@
             onAddItem('KPI');
           }
         }
-
         loadingKPI.value = false;
       }
 
@@ -624,7 +634,7 @@
           });
           const data = response.data;
           if (data.success && data.data) {
-            errYear.value = data?.data[0]?.year;
+            errYear.value = data.data[0].year;
             data.data.forEach(element => {
               JSON.parse(element.kpi).forEach(element => {
                 if (element.program) {
@@ -632,7 +642,11 @@
                     program: element.program,
                   };
                   for (let i = 1; i <= 12; i++) {
-                    newRow[`m${i}`] = element[`m${i}`];
+                    if (element[`m${i}`] > 0 || element[`m${i}`] === 0) {
+                      newRow[`m${i}`] = element[`m${i}`];
+                    } else {
+                      newRow[`m${i}`] = '-';
+                    }
                   }
                   baseTable.value.push(newRow);
                 }
@@ -768,9 +782,10 @@
 
       const handleInputChange = (index, month, value, proposer) => {
         isEdit.value = true;
+        value = value.trim();
         const regex = /^[0-9.,]+$/;
         if (!regex.test(value) || isNaN(value)) {
-          value = ''
+          value = '';
         }
         if (proposer) {
           switch (proposer.label) {
@@ -780,7 +795,7 @@
               }
               tableDataKpiMSA.value[index] = {
                 ...tableDataKpiMSA.value[index],
-                [`m${month}`]: value ? Math.round(value) : ''
+                [`m${month}`]: value ? Math.round(value) : 0
               };
               break;
             case 'HR':
@@ -808,7 +823,7 @@
               }
               tableDataKpi.value[index] = {
                 ...tableDataKpi.value[index],
-                [`m${month}`]: proposer.stage_id == 4 ? value : value ? Math.round(value) : ''
+                [`m${month}`]: proposer.stage_id == 4 ? value : value ? Math.round(value) : 0
               };
               break;
           }
@@ -817,6 +832,13 @@
 
       const handleCreateKpi = async () => {
         try {
+          tableDataKpi.value.forEach(item => {
+            for (let i = 1; i <= 12; i++) {
+              if (!item[`m${i}`] && item[`m${i}`] !== 0) {
+                item[`m${i}`] = '-';
+              }
+            }
+          })
           form.value.kpi = tableDataKpi.value;
           const response = await axios.post(`../../api/create_kpi.php`, form.value);
           if (response.data.success) {
@@ -825,7 +847,7 @@
             if (response.data.code === 'STAGE_MISMATCH') {
               return true;
             } else {
-              showNotification('error', response.data.message || 'Có lỗi xảy ra khi tạo KPI');
+              showNotification('error', response.data.message || 'Có lỗi xảy ra khi tạo KPI.');
               return false;
             }
 
@@ -835,7 +857,7 @@
             return true;
           } else {
             tableData.value = {};
-            showNotification('error', error.message || 'Có lỗi xảy ra khi tạo KPI');
+            showNotification('error', error.message || 'Có lỗi xảy ra khi tạo KPI.');
             return false;
           }
 
@@ -844,7 +866,7 @@
 
       const validateTableKpiData = () => {
         if (tableDataKpi.value.length === 0) {
-          return "Vui lòng nhập KPI cho ít nhất 1 chương trình";
+          return "Vui lòng nhập KPI cho ít nhất 1 chương trình.";
         }
         const list = [];
         for (let i = 0; i < tableDataKpi.value.length; i++) {
@@ -854,7 +876,7 @@
           for (let j = 1; j <= 12; j++) {
             if (row[`m${j}`] !== "" && row[`m${j}`] > 0) {
               hasData = true;
-              break;
+              return true;
             }
           }
 
@@ -864,9 +886,9 @@
         }
         if (list.length > 0) {
           if (list.length === 1) {
-            return `Vui lòng nhập KPI cho chương trình ${list[0]} là số nguyên dương`;
+            return `Vui lòng nhập KPI cho chương trình ${list[0]}.`;
           } else {
-            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} là số nguyên dương`;
+            return "Vui lòng nhập KPI cho ít nhất 1 chương trình.";
           }
         }
 
@@ -885,7 +907,7 @@
           for (let j = 1; j <= 12; j++) {
             if (row[`m${j}`] !== "" && row[`m${j}`] > 0) {
               hasData = true;
-              break;
+              return true;
             }
           }
 
@@ -895,9 +917,9 @@
         }
         if (list.length > 0) {
           if (list.length === 1) {
-            return `Vui lòng nhập KPI cho chương trình ${list[0]} tại bảng KPI MSA là số dương`;
+            return `Vui lòng nhập KPI cho chương trình ${list[0]} tại bảng KPI MSA.`;
           } else {
-            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} tại bảng KPI MSA là số dương`;
+            return "Vui lòng nhập KPI cho ít nhất 1 chương trình tại bảng KPI MSA.";
           }
         }
 
@@ -905,9 +927,6 @@
       };
 
       const validateTableKpiHRData = () => {
-        if (tableDataKpiHR.value.length === 0) {
-          return "Vui lòng nhập KPI cho ít nhất 1 chương trình tại bảng KPI HR";
-        }
         const list = [];
         for (let i = 0; i < tableDataKpiHR.value.length; i++) {
           const row = tableDataKpiHR.value[i];
@@ -925,11 +944,7 @@
           }
         }
         if (list.length > 0) {
-          if (list.length === 1) {
-            return `Vui lòng nhập KPI cho chương trình ${list[0]} tại bảng KPI HR là số nguyên dương`;
-          } else {
-            return `Vui lòng nhập KPI cho các chương trình: ${list.join(', ')} tại bảng KPI HR là số nguyên dương`;
-          }
+          return `Vui lòng nhập ít nhất 1 giá trị trong bảng KPI.`;
         }
 
         return true;
@@ -953,7 +968,7 @@
               showNotification('warning', 'Yêu cầu này đã được xử lý. Trang sẽ được tải lại.');
               reloadPage();
             } else {
-              showNotification('error', response.data.message || 'Có lỗi xảy ra khi đăng ký MS');
+              showNotification('error', response.data.message || 'Có lỗi xảy ra khi đăng ký MS.');
             }
           }
 
@@ -1254,30 +1269,113 @@
         if (value >= 0 && month) {
           const historyItem = baseTable.find((h) => h.program === program);
           if (historyItem) {
-            const oldValue = Number(historyItem[`m${month}`]);
+            const oldValue = Number(historyItem[`m${month}`]) || 0;
             const newValue = Number(value) || 0;
             if (newValue > oldValue) {
-              return 'increase';
+              return 'custom increase';
             } else if (newValue < oldValue) {
-              return 'decrease';
+              return 'custom decrease';
             } else {
-              return 'no-change';
+              return 'custom no-change';
             }
           } else {
             if (value > 0) {
-              return 'increase';
+              return 'custom increase';
             } else if (value < 0) {
-              return 'no-change';
+              return 'custom no-change';
             }
           }
         }
       }
 
-      const handleClickShowAll = () => {
-        drawer.value = true;
+      const getAllUserKpi = async (year) => {
+        try {
+          const response = await axios.get('../../api/get_all_user_kpi.php', {
+            params: {
+              year
+            }
+          });
+          if (response.data.success) {
+            return response.data.data;
+          }
+        } catch (error) {
+          console.error(error);
+        }
       }
 
-       onMounted(async () => {
+      const handleClickShowGoal = async () => {
+        datePicker.value = null;
+        drawer.value = true;
+        handleDataKpi(null, null, currYear.value);
+      }
+
+      const handlePickMonth = (value) => {
+        const start = value?.[0] || null;
+        const end = value?.[1] || null;
+
+        if (start && end) {
+          if (start.getFullYear() !== end.getFullYear()) {
+            showNotification('warning', 'Vui lòng chọn khoảng tháng trong cùng 1 năm.');
+            datePicker.value = null;
+          } else {
+            const startMonth = start.getMonth() + 1;
+            const endMonth = end.getMonth() + 1;
+            const year = start.getFullYear();
+            goalYear.value = year;
+            handleDataKpi(startMonth, endMonth, year);
+          }
+        } else {
+          handleDataKpi(null, null, currYear.value);
+        }
+      }
+
+      const handleDataKpi = async (startMonth, endMonth, year) => {
+        tableDataAll.value = [];
+        const data = await getAllUserKpi(year);
+        const result = {};
+
+        data.forEach((item) => {
+          const {
+            user_id,
+            id
+          } = item;
+
+          if (!result[user_id] || result[user_id].id < id) {
+            result[user_id] = item;
+          }
+        });
+        Object.values(result).forEach(element => {
+          let programs = JSON.parse(element.kpi);
+          let newRow = {
+            user_name: element.user_name,
+            user_id: element.user_id
+          }
+
+          Object.values(listProgram).forEach((program, index) => {
+            newRow[program] = "-";
+          })
+          programs.forEach(program => {
+            let total = 0;
+            if (startMonth && endMonth) {
+              for (let i = startMonth; i <= endMonth; i++) {
+                if (Number(program[`m${i}`]) > 0) {
+                  total += Number(program[`m${i}`]);
+                }
+              }
+            } else {
+              for (let i = 1; i <= 12; i++) {
+                if (Number(program[`m${i}`]) > 0) {
+                  total += Number(program[`m${i}`]);
+                }
+              }
+            }
+            newRow[program.program] = total;
+          })
+          tableDataAll.value.push(newRow);
+        });
+      }
+
+      onMounted(async () => {
         const url = new URL(window.location.href);
         const id = url.searchParams.get('id');
         const tab = url.searchParams.get('tab');
@@ -1432,8 +1530,13 @@
         getClass,
         tableRef,
         checkShowDelete,
-        handleClickShowAll,
+        handleClickShowGoal,
         drawer,
+        tableDataAll,
+        datePicker,
+        handlePickMonth,
+        titleGoal,
+        goalText
       }
     }
   });

@@ -159,27 +159,6 @@ class MsSignupList extends CDBResult
     }
   }
 
-  // private function getTotalCount($baseQuery)
-  // {
-  //   try {
-  //     $modifiedQuery = str_replace("SELECT msl.*", "SELECT msl.id", $baseQuery);
-  //     $countQuery = "SELECT COUNT(*) as total FROM (
-  //           $modifiedQuery
-  //       ) as combined_results";
-
-  //     $totalRes = $this->db->Query($countQuery);
-  //     if (!$totalRes) {
-  //       return 0;
-  //     }
-
-  //     $total = $totalRes->Fetch();
-  //     return $total ?: 0;
-  //   } catch (Exception $e) {
-  //     error_log("Error in total count query: " . $e->getMessage());
-  //     return 0;
-  //   }
-  // }
-
   private function getTotalCount($baseQuery)
   {
     try {

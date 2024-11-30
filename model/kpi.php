@@ -19,15 +19,19 @@ class Kpi extends CDBResult
     public function GetList($arOrder = array(), $arFilter = array())
     {
         $query = "SELECT * FROM " . $this->QUERY_TABLE;
-
+    
         if (!empty($arFilter)) {
             $whereClauses = array();
             foreach ($arFilter as $field => $value) {
-                $whereClauses[] = "$field = '$value'";
+                if (is_array($value)) {
+                    $whereClauses[] = "$field IN (" . implode(',', $value) . ")";
+                } else {
+                    $whereClauses[] = "$field = '$value'";
+                }
             }
             $query .= " WHERE " . implode(' AND ', $whereClauses);
         }
-
+        
         $dbRes = $this->db->Query($query);
         $arResult = array();
         while ($arRes = $dbRes->Fetch()) {

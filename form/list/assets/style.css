@@ -150,6 +150,11 @@
   scrollbar-width: thin;
 }
 
+.custom .el-input__inner{
+  font-weight: bold;
+  color: #808080 !important;
+}
+
 .form-wrapper {
   padding: 15px 15px 0;
 }
@@ -286,4 +291,8 @@
 .el-table thead th.el-table__cell {
   background: #21498f !important;
   color: #fff;
+}
+
+.el-overlay{
+  z-index: 999 !important;
 }
