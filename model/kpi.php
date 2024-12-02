@@ -31,7 +31,6 @@ class Kpi extends CDBResult
             }
             $query .= " WHERE " . implode(' AND ', $whereClauses);
         }
-        
         $dbRes = $this->db->Query($query);
         $arResult = array();
         while ($arRes = $dbRes->Fetch()) {

@@ -51,7 +51,18 @@
                 <el-table-column prop="department" label="Phòng ban" min-width="130"></el-table-column>
                 <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
                 <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
-                <el-table-column fixed="right" label="Hành động" min-width="140">
+                <el-table-column prop="form_type" fixed="right" label="Phân loại" min-width="100">
+                    <template #default="scope">
+                        <el-button
+                            link
+                            disabled
+                            type="primary"
+                            size="small">
+                            {{ scope.row.form_type == 'register' ? 'Đăng ký mới' : scope.row.form_type == 'unregister'? 'Huỷ đăng ký' : 'Chuyển nhóm' }}
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column fixed="right" label="Hành động" min-width="120">
                     <template #default="scope">
                         <div v-if="scope.row.status === 'pending'" style="display: flex; gap: 10px; flex-direction: column;">
                             <template v-if="scope.row.reviewers.some(reviewer =>
@@ -188,6 +199,17 @@
                 <el-table-column prop="join_date" label="Ngày tham gia MS" min-width="140"></el-table-column>
                 <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
                 <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
+                <el-table-column prop="form_type" fixed="right" label="Phân loại" min-width="100">
+                    <template #default="scope">
+                        <el-button
+                            link
+                            disabled
+                            type="primary"
+                            size="small">
+                            {{ scope.row.form_type == 'register' ? 'Đăng ký mới' : scope.row.form_type == 'unregister'? 'Huỷ đăng ký' : 'Chuyển nhóm' }}
+                        </el-button>
+                    </template>
+                </el-table-column>
                 <el-table-column fixed="right" label="Hành động" min-width="120">
                     <template #default="scope">
                         <el-button
@@ -257,6 +279,17 @@
                 <el-table-column prop="team_ms" label="Team đăng ký" min-width="150"></el-table-column>
                 <el-table-column prop="list_propose" label="Danh sách đề xuất" min-width="300"></el-table-column>
                 <el-table-column prop="comments" label="Lý do từ chối" min-width="100"></el-table-column>
+                <el-table-column prop="form_type" fixed="right" label="Phân loại" min-width="100">
+                    <template #default="scope">
+                        <el-button
+                            link
+                            disabled
+                            type="primary"
+                            size="small">
+                            {{ scope.row.form_type == 'register' ? 'Đăng ký mới' : scope.row.form_type == 'unregister'? 'Huỷ đăng ký' : 'Chuyển nhóm' }}
+                        </el-button>
+                    </template>
+                </el-table-column>
                 <el-table-column fixed="right" label="Hành động" min-width="120">
                     <template #default="scope">
                         <el-button
@@ -347,7 +380,7 @@
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :class='getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_id)'
+                                        :class='getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_id, form.status)'
                                         :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
@@ -435,6 +468,8 @@
                                                     </div>
                                                 </template>
                                                 <el-table
+                                                    :show-summary="proposer.stage_id != 4"
+                                                    :summary-method="getSummaries"
                                                     :data="JSON.parse(item.old_kpi || '[]')"
                                                     border
                                                     style="width: 100%"
@@ -455,6 +490,11 @@
                                                             </template>
                                                         </el-table-column>
                                                     </template>
+                                                    <el-table-column fixed="right" label="Tổng" min-width="60">
+                                                        <template #default="scope">
+                                                            {{ calculateRowTotal(scope.row) }}
+                                                        </template>
+                                                    </el-table-column>
                                                 </el-table>
                                             </el-card>
                                         </el-timeline-item>
@@ -577,7 +617,7 @@
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :class="getClass(scope.row.program, scope.row[`m${month}`], month)"
+                                        :class="getClass(scope.row.program, scope.row[`m${month}`], month, 0, form.status)"
                                         :disabled="form.completed == true ? false : (currMonth < 12 ? month <= currMonth : false)"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
@@ -653,6 +693,8 @@
                                                 </div>
                                             </template>
                                             <el-table
+                                                :show-summary="form.stage_id != 4"
+                                                :summary-method="getSummaries"
                                                 :data="JSON.parse(item.old_kpi || '[]')"
                                                 border
                                                 style="width: 100%"
@@ -673,6 +715,11 @@
                                                         </template>
                                                     </el-table-column>
                                                 </template>
+                                                <el-table-column fixed="right" label="Tổng" min-width="60">
+                                                    <template #default="scope">
+                                                        {{ calculateRowTotal(scope.row) }}
+                                                    </template>
+                                                </el-table-column>
                                             </el-table>
                                         </el-card>
                                     </el-timeline-item>
@@ -758,7 +805,7 @@
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        class="custom"
+                                        :class="getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_id, form.status)"
                                         :disabled="proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
@@ -846,6 +893,8 @@
                                                     </div>
                                                 </template>
                                                 <el-table
+                                                    :show-summary="proposer.stage_id != 4"
+                                                    :summary-method="getSummaries"
                                                     :data="JSON.parse(item.old_kpi || '[]')"
                                                     border
                                                     style="width: 100%"
@@ -866,6 +915,11 @@
                                                             </template>
                                                         </el-table-column>
                                                     </template>
+                                                    <el-table-column fixed="right" label="Tổng" min-width="60">
+                                                        <template #default="scope">
+                                                            {{ calculateRowTotal(scope.row) }}
+                                                        </template>
+                                                    </el-table-column>
                                                 </el-table>
                                             </el-card>
                                         </el-timeline-item>
@@ -989,6 +1043,8 @@
                                                         </div>
                                                     </template>
                                                     <el-table
+                                                        :show-summary="proposer.stage_id != 4"
+                                                        :summary-method="getSummaries"
                                                         :data="JSON.parse(item.old_kpi || '[]')"
                                                         border
                                                         style="width: 100%"
@@ -1009,6 +1065,11 @@
                                                                 </template>
                                                             </el-table-column>
                                                         </template>
+                                                        <el-table-column fixed="right" label="Tổng" min-width="60">
+                                                            <template #default="scope">
+                                                                {{ calculateRowTotal(scope.row) }}
+                                                            </template>
+                                                        </el-table-column>
                                                     </el-table>
                                                 </el-card>
                                             </el-timeline-item>
@@ -1042,56 +1103,73 @@
             </div><span class="side-panel-label-text"></span>
         </div>
     </div>
-    <el-tabs v-model="activeNameKpi" @tab-click="handleClickTab">
-        <el-tab-pane v-for="(member, index) in teamMsMember" :key="index" :label="member.LAST_NAME + ' ' + member.NAME" :name="member.ID">
-            <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
-                <el-form-item label="Bảng KPI:" prop="stage">
-                    <span v-html="textReviewerName2(proposer)"></span>
-                </el-form-item>
+    <div class="content-wrap" style="padding: 20px;">
+        <div class="table-control" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div class="title" v-html="titleGoalMember"></div>
+            <div class="block">
+                <el-date-picker
+                    v-model="yearPicker"
+                    @change="handlePickYear"
+                    type="year"
+                    format="YYYY"
+                    placeholder="Chọn năm">
+                </el-date-picker>
+            </div>
+        </div>
+        <el-tabs v-model="activeNameKpi" @tab-click="handleClickTab">
+            <el-tab-pane v-for="(member, index) in teamMsMember" :key="index" :label="member.LAST_NAME + ' ' + member.NAME" :name="member.ID">
+                <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
+                    <el-form-item label="Bảng KPI:" prop="stage">
+                        <span v-html="textReviewerName2(proposer)"></span>
+                    </el-form-item>
 
-                <div class="form-table">
-                    <el-table
-                        :data="proposer.stage_id == 3 ? tableDataKpiMemberMSA : tableDataKpiMemberHR"
-                        border
-                        style="width: 100%"
-                        max-height="500"
-                        :show-summary="proposer.stage_id != 4"
-                        :summary-method="getSummaries">
-                        <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
-                        <template v-for="month in 12" :key="month">
-                            <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
+                    <div class="form-table">
+                        <el-table
+                            :data="proposer.stage_id == 3 ? tableDataKpiMemberMSA : tableDataKpiMemberHR"
+                            border
+                            style="width: 100%"
+                            max-height="500"
+                            :show-summary="proposer.stage_id != 4"
+                            :summary-method="getSummaries">
+                            <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
+                            <template v-for="month in 12" :key="month">
+                                <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
+                                    <template #default="scope">
+                                        <el-input
+                                            class="custom"
+                                            :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
+                                            size="small"
+                                            v-model="scope.row[`m${month}`]"
+                                            @input="(event) => handleInputChange(scope.$index, month, event, proposer)"
+                                            placeholder="0">
+                                        </el-input>
+                                    </template>
+                                </el-table-column>
+                            </template>
+
+                            <el-table-column fixed="right" label="Tổng" min-width="60">
                                 <template #default="scope">
-                                    <el-input
-                                        class="custom" 
-                                        :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
-                                        size="small"
-                                        v-model="scope.row[`m${month}`]"
-                                        @input="(event) => handleInputChange(scope.$index, month, event, proposer)"
-                                        placeholder="0">
-                                    </el-input>
+                                    {{ calculateRowTotal(scope.row) }}
                                 </template>
                             </el-table-column>
-                        </template>
-
-                        <el-table-column fixed="right" label="Tổng" min-width="60">
-                            <template #default="scope">
-                                {{ calculateRowTotal(scope.row) }}
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                        </el-table>
+                    </div>
                 </div>
-            </div>
-        </el-tab-pane>
-    </el-tabs>
+            </el-tab-pane>
+        </el-tabs>
+    </div>
 </div>
 
 <el-drawer
     v-model="drawer"
     :with-header="false"
     style="overflow: unset;">
+    <div :class="loadingKPI ? 'loader-wrap active' : 'loader-wrap'">
+        <span class="loader"></span>
+    </div>
     <div class="side-panel-labels">
         <div class="side-panel-label" style="max-width: 215px;">
-            <div class="side-panel-label-icon-box" title="Close" @click="drawer = false">
+            <div class="side-panel-label-icon-box" title="Close" @click="drawer = false; loadingKPI = false">
                 <div class="side-panel-label-icon side-panel-label-icon-close"></div>
             </div><span class="side-panel-label-text"></span>
         </div>
@@ -1105,6 +1183,7 @@
                     @change="handlePickMonth"
                     type="monthrange"
                     range-separator="-"
+                    format="MM/YYYY"
                     start-placeholder="Tháng bắt đầu"
                     end-placeholder="Tháng kết thúc">
                 </el-date-picker>

@@ -17,8 +17,11 @@
       const tableRef = ref(null);
       const tableData = ref([]);
       const tableDataKpi = ref([]);
+      const tempTableDataKpi = ref([]);
       const tableDataKpiMSA = ref([]);
+      const tempTableDataKpiMSA = ref([]);
       const tableDataKpiHR = ref([]);
+      const tempTableDataKpiHR = ref([]);
       const oldDataKpiMSA = ref([]);
       const oldDataKpiHR = ref([]);
       const tableDataKpiMemberHR = ref([]);
@@ -42,6 +45,7 @@
       const activeNames = ref('pending');
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
+      const flagGetClass = ref(false);
       const currMonth = ref(new Date().getMonth() + 1);
       const currYear = ref(new Date().getFullYear());
       const nextYear = ref(new Date().getFullYear() + 1);
@@ -56,12 +60,13 @@
       const currentPage = ref(1);
       const pageSize = ref(50);
       const total = ref(0);
-      const errYear = ref(0);
+      const dynamicYear = ref(0);
       const searchQuery = ref('');
       const activeName = ref('pending');
       const activeNameKpi = ref(null);
       const showKPI = ref(false);
       const datePicker = ref(null);
+      const yearPicker = ref(new Date());
       let userId = <?= json_encode($userID ?? "") ?>;
       let listProgram = <?= json_encode($program ?? "") ?>;
       let urlUserInfo = <?= json_encode($config["url_user_info"] ?? "") ?>;
@@ -69,7 +74,7 @@
       let hrIds = <?= json_encode($config["hr_ids"] ?? "") ?>;
       let msaIds = <?= json_encode($config["msa_ids"] ?? "") ?>;
       let coefficients = <?= json_encode($config["coefficients"] ?? "") ?>;
-      const pageTitle = `Danh sách đơn đăng ký tham gia hoạt động MS`;
+      const pageTitle = `Quản lý hoạt động MS`;
       const agreeKpiText = `Tôi đồng ý với các KPI được phân công ở bảng trên`;
       const agreeReceivedText = `Tôi đã nhận đủ các phần yêu cầu sau:`;
       const textBtn1 = `Xác nhận`;
@@ -78,7 +83,7 @@
       const timelineLoadingText = `Đang lấy dữ liệu...`;
       const noMoreText = `Không còn dữ liệu`;
       const textBtn4 = `Điều chỉnh KPI`;
-      const goalText = `Mục tiêu MS`;
+      const goalText = `KPIs MS`;
       const goalYear = ref(new Date().getFullYear());
 
       const textReviewerName = computed(() => {
@@ -86,7 +91,11 @@
       })
 
       const titleGoal = computed(() => {
-        return `<span>Mục tiêu MS năm: ${goalYear.value}</span>`
+        return `<span>KPIs MS năm: ${goalYear.value}</span>`
+      })
+
+      const titleGoalMember = computed(() => {
+        return `<span>KPIs thành viên ${form.value.team_ms} năm: ${yearPicker.value.getFullYear()}</span>`
       })
 
       const textReviewerName2 = computed(() => {
@@ -97,7 +106,7 @@
       });
 
       const yearText = computed(() => {
-        return `<span>${currMonth.value === 12  && form.value.status === 'pending' ? nextYear.value : form.value.status === 'error'? errYear.value : currYear.value}</span>`
+        return `<span>${currMonth.value === 12  && form.value.status === 'pending' && form.value.completed != true? nextYear.value : form.value.status === 'error' || form.value.is_active == false? dynamicYear.value : currYear.value}</span>`
       })
 
       const totalText = computed(() => {
@@ -387,12 +396,14 @@
         if (form.status === 'pending') {
           switch (proposer.label) {
             case 'MSA':
+              historyDataKpiMSA.value = JSON.parse(JSON.stringify(tempTableDataKpiMSA.value));
               oldDataKpiMSA.value = tableDataKpiMSA.value.map(row => ({
                 ...row
               }));
               editKpiMSA.value = true;
               break;
             case 'HR':
+              historyDataKpiHR.value = JSON.parse(JSON.stringify(tempTableDataKpiHR.value));
               oldDataKpiHR.value = tableDataKpiHR.value.map(row => ({
                 ...row
               }))
@@ -402,6 +413,9 @@
           stageDeal.value.includes(proposer.stage_id) ? '' : stageDeal.value.push(proposer.stage_id);
           return true;
         } else {
+          flagGetClass.value = true;
+          historyDataKpiMSA.value = JSON.parse(JSON.stringify(tempTableDataKpiMSA.value));
+          historyDataKpiHR.value = JSON.parse(JSON.stringify(tempTableDataKpiHR.value));
           switch (proposer.label) {
             case 'MSA':
               editKpiMSA.value = true;
@@ -494,6 +508,12 @@
         tableDataKpi.value = [];
         tableDataKpiMSA.value = [];
         tableDataKpiHR.value = [];
+        tempTableDataKpi.value = [];
+        tempTableDataKpiHR.value = [];
+        tempTableDataKpiMSA.value = [];
+        historyDataKpi.value = [];
+        historyDataKpiMSA.value = [];
+        historyDataKpiHR.value = [];
         showFormKPI.value = !showFormKPI.value;
         if (showFormKPI.value) {
           document.body.style.overflow = 'hidden';
@@ -519,13 +539,14 @@
         let year = null;
         switch (rowData.status) {
           case 'pending':
-            year = currMonth.value === 12 ? nextYear.value : currYear.value;
+            year = currMonth.value === 12 && rowData.completed != true ? nextYear.value : currYear.value;
             break;
           case 'success':
-            year = currYear.value;
+            year = rowData.is_active == true ? currYear.value : null;
             break;
         }
-        if (Number(rowData.stage_id) === Number(rowData.max_stage) && rowData.status !== 'error') {
+        // if (Number(rowData.stage_id) === Number(rowData.max_stage) && rowData.status !== 'error') {
+        if (Number(rowData.stage_id) === Number(rowData.max_stage) || rowData.status == 'error') {
           flag.value = true;
           await getListProposer();
           listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
@@ -538,7 +559,7 @@
             }
           });
           const responses = await Promise.all(promises);
-          if (currMonth.value === 12 && rowData.status === 'pending') {
+          if (currMonth.value === 12 && rowData.status === 'pending' && !rowData.completed == true) {
             listProposer.value.forEach(element => {
               if (element.label == 'MSA' || element.label == 'HR') {
                 switch (element.label) {
@@ -559,17 +580,17 @@
           loadingKPI.value = false;
           return;
         }
-        if (rowData.status === 'error') {
-          await getListProposer();
-          listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
-        }
+        // if (rowData.status === 'error') {
+        //   await getListProposer();
+        //   listProposer.value = listProposer.value.filter(item => Number(item.require_kpi) === 1 && Number(item.stage_id) != Number(rowData.max_stage));
+        // }
 
         if (hasKpi) {
           tableDataKpi.value = [];
           const res = await getUserKpi(rowData.id, rowData.user_id, rowData.stage_id, 'main', year);
         }
 
-        if (form.value.stage_id == 4) {
+        if (form.value.stage_id == 4 && form.value.status != 'error') {
           tableDataKpiMSA.value = [];
           await getUserKpi(rowData.id, rowData.user_id, 3, 'MSA', year);
 
@@ -602,25 +623,23 @@
 
       const getUserKpi = async (ms_list_id, user_id, stage_id, type = "main", year = null) => {
         let baseTable = [];
+        let tempTable = [];
         let historyTable = null;
         switch (type) {
           case 'main':
             baseTable = tableDataKpi;
-            historyTable = historyDataKpi
+            historyTable = historyDataKpi;
+            tempTable = tempTableDataKpi;
             break;
           case 'MSA':
             baseTable = tableDataKpiMSA;
-            historyTable = historyDataKpiMSA
+            historyTable = historyDataKpiMSA;
+            tempTable = tempTableDataKpiMSA;
             break;
           case 'HR':
             baseTable = tableDataKpiHR;
-            historyTable = historyDataKpiHR
-            break;
-          case 'member_HR':
-            baseTable = tableDataKpiMemberHR;
-            break;
-          case 'member_MSA':
-            baseTable = tableDataKpiMemberMSA;
+            historyTable = historyDataKpiHR;
+            tempTable = tempTableDataKpiHR;
             break;
         }
         try {
@@ -634,7 +653,7 @@
           });
           const data = response.data;
           if (data.success && data.data) {
-            errYear.value = data.data[0].year;
+            dynamicYear.value = data?.data[0]?.year;
             data.data.forEach(element => {
               JSON.parse(element.kpi).forEach(element => {
                 if (element.program) {
@@ -649,9 +668,9 @@
                     }
                   }
                   baseTable.value.push(newRow);
+                  tempTable.value.push(JSON.parse(JSON.stringify(newRow)));
                 }
               });
-
             });
             baseTable.value.forEach(element => {
               switch (type) {
@@ -663,11 +682,6 @@
                   break;
                 case 'HR':
                   createdProgramHR.value.push(element.program);
-                  break;
-                case 'member_HR':
-                  break;
-                case 'member_MSA':
-                  break;
               }
             });
 
@@ -681,7 +695,7 @@
                     for (let i = 1; i <= 12; i++) {
                       newRow[`m${i}`] = element[`m${i}`];
                     }
-                    historyTable.value.push(newRow);
+                    historyTable.value.push(JSON.parse(JSON.stringify(newRow)));
                   }
                 });
 
@@ -812,6 +826,7 @@
               };
               break;
             default:
+              historyDataKpi.value = JSON.parse(JSON.stringify(tempTableDataKpi.value));
               if (!tableDataKpi.value[index]) {
                 tableDataKpi.value[index] = {};
               }
@@ -829,6 +844,36 @@
           }
         }
       };
+
+      document.addEventListener('keydown', function(event) {
+        const sidePanel = document.querySelector('.side-panel');
+        if (event.key === 'Escape') {
+          if (sidePanel && sidePanel.classList.contains('side-panel-overlay-open')) {
+            return;
+          }
+          if (showKPI.value && showFormKPI.value) {
+            showKPI.value = false;
+          } else {
+            showFormKPI.value = false;
+          }
+          const isEmpty = Object.keys(approveLoading.value).length === 0;
+          if (!loading.value && isEmpty) {
+            document.body.style.overflow = 'auto';
+            editKpiHR.value = false;
+            editKpiMSA.value = false;
+            isEdit.value = false;
+            activeNames.value = [];
+            stageDeal.value = [];
+            createdProgram.value = [];
+            createdProgramHR.value = [];
+            createdProgramMSA.value = [];
+            flagGetClass.value = false;
+            listProposer.value.forEach((item) => {
+              resetTimeline(item.stage_id);
+            });
+          }
+        }
+      });
 
       const handleCreateKpi = async () => {
         try {
@@ -992,6 +1037,7 @@
           createdProgram.value = [];
           createdProgramHR.value = [];
           createdProgramMSA.value = [];
+          flagGetClass.value = false;
           listProposer.value.forEach((item) => {
             resetTimeline(item.stage_id);
           });
@@ -1095,7 +1141,6 @@
               reloadPage();
             }
           }
-
         } catch (error) {
           loading.value = false;
           loadingKPI.value = false;
@@ -1132,14 +1177,20 @@
           });
 
           if (!values.every(value => isNaN(value))) {
-            sums[index] = values.reduce((prev, curr) => {
+            const sum = values.reduce((prev, curr) => {
               const value = Number(curr);
               if (!isNaN(value)) {
                 return prev + value;
               } else {
                 return prev;
               }
-            }, 0).toFixed(2);
+            }, 0);
+
+            if (sum % 1 !== 0) {
+              sums[index] = parseFloat(sum.toFixed(2));
+            } else {
+              sums[index] = sum;
+            }
           } else {
             sums[index] = '';
           }
@@ -1147,7 +1198,6 @@
 
         return sums;
       };
-
 
       const calculateRowTotal = (row) => {
         let total = 0;
@@ -1158,6 +1208,14 @@
       };
 
       const checkChangeKpi = (proposer, form) => {
+        if (currMonth.value === 12 &&
+          form.completed == true &&
+          tableDataKpiHR.value.length < 1 &&
+          tableDataKpiMSA.value.length < 1 ||
+          form.is_active == false
+        ) {
+          return false;
+        }
         const owner = parseInt(form.user_id);
         const reviewer = form.reviewers.find(r => r.stage_id === parseInt(proposer.stage_id));
         const reviewer_id = reviewer ? reviewer.reviewer_id : null;
@@ -1198,13 +1256,14 @@
         loadingMemberKPI.value = true;
         tableDataKpiMemberHR.value = [];
         tableDataKpiMemberMSA.value = [];
+        yearPicker.value = new Date();
         const res = await getTeamMsMember();
         if (res) {
           const promises = listProposer.value.map(element => {
             if (element.label == 'MSA') {
-              return getUserKpi(null, res[0].ID, element.stage_id, 'member_MSA', currYear.value);
+              return getKpiMsMember(res[0].ID, element.stage_id, 'member_MSA', currYear.value);
             } else if (element.label == 'HR') {
-              return getUserKpi(null, res[0].ID, element.stage_id, 'member_HR', currYear.value);
+              return getKpiMsMember(res[0].ID, element.stage_id, 'member_HR', currYear.value);
             }
           });
           const responses = await Promise.all(promises);
@@ -1213,20 +1272,85 @@
         loadingMemberKPI.value = false;
       }
 
+      const handlePickYear = async (value) => {
+        loadingMemberKPI.value = true;
+        tableDataKpiMemberHR.value = [];
+        tableDataKpiMemberMSA.value = [];
+
+        const res = await getTeamMsMember();
+        if (res) {
+          const promises = listProposer.value.map(element => {
+            if (element.label == 'MSA') {
+              return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_MSA', value.getFullYear());
+            } else if (element.label == 'HR') {
+              return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_HR', value.getFullYear());
+            }
+          });
+          const responses = await Promise.all(promises);
+        }
+        loadingMemberKPI.value = false;
+      }
+
       const handleClickTab = async (tab, event) => {
         loadingMemberKPI.value = true;
         tableDataKpiMemberHR.value = [];
         tableDataKpiMemberMSA.value = [];
         activeNameKpi.value = tab.props.name;
+        const year = yearPicker.value.getFullYear();
         const promises = listProposer.value.map(element => {
           if (element.label == 'MSA') {
-            return getUserKpi(null, tab.props.name, element.stage_id, 'member_MSA', currYear.value);
+            return getKpiMsMember(tab.props.name, element.stage_id, 'member_MSA', year);
           } else if (element.label == 'HR') {
-            return getUserKpi(null, tab.props.name, element.stage_id, 'member_HR', currYear.value);
+            return getKpiMsMember(tab.props.name, element.stage_id, 'member_HR', year);
           }
         });
         const responses = await Promise.all(promises);
         loadingMemberKPI.value = false;
+      }
+
+      const getKpiMsMember = async (user_id, stage_id, type, year) => {
+        let baseTable = [];
+        try {
+          switch (type) {
+            case 'member_MSA':
+              baseTable.value = tableDataKpiMemberMSA.value;
+              break;
+            case 'member_HR':
+              baseTable.value = tableDataKpiMemberHR.value;
+              break;
+          }
+          const response = await axios.get('../../api/get_kpi_ms_member.php', {
+            params: {
+              user_id,
+              stage_id,
+              year
+            }
+          });
+          const data = response.data;
+          if (data.success && data.data) {
+            data.data.forEach(element => {
+              JSON.parse(element.kpi).forEach(element => {
+                if (element.program) {
+                  const newRow = {
+                    program: element.program,
+                  };
+                  for (let i = 1; i <= 12; i++) {
+                    if (element[`m${i}`] > 0 || element[`m${i}`] === 0) {
+                      newRow[`m${i}`] = element[`m${i}`];
+                    } else {
+                      newRow[`m${i}`] = '-';
+                    }
+                  }
+                  baseTable.value.push(newRow);
+                }
+              });
+            });
+          } else {
+            return [];
+          }
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       const hideKPIsMember = () => {
@@ -1252,37 +1376,40 @@
         return true;
       }
 
-      const getClass = (program, value, month, stage = null) => {
-        let table = null;
-        stage ? stage == 3 ? table = "MSA" : table = "HR" : table = null;
-        let baseTable = [];
-        switch (table) {
-          case 'MSA':
-            baseTable = historyDataKpiMSA.value;
-            break;
-          case 'HR':
-            baseTable = historyDataKpiHR.value;
-            break;
-          default:
-            baseTable = historyDataKpi.value;
-        }
-        if (value >= 0 && month) {
-          const historyItem = baseTable.find((h) => h.program === program);
-          if (historyItem) {
-            const oldValue = Number(historyItem[`m${month}`]) || 0;
-            const newValue = Number(value) || 0;
-            if (newValue > oldValue) {
-              return 'custom increase';
-            } else if (newValue < oldValue) {
-              return 'custom decrease';
+      const getClass = (program, value, month, stage = null, status) => {
+        if (status == 'pending' || flagGetClass.value == true) {
+          let table = null;
+          stage ? (stage == 3 ? table = "MSA" : table = "HR") : table = null;
+          let baseTable = [];
+          switch (table) {
+            case 'MSA':
+              baseTable = historyDataKpiMSA.value;
+              break;
+            case 'HR':
+              baseTable = historyDataKpiHR.value;
+              break;
+            default:
+              baseTable = historyDataKpi.value;
+          }
+
+          if (value >= 0 && month) {
+            const historyItem = baseTable.find((h) => h.program === program);
+            if (historyItem) {
+              const oldValue = Number(historyItem[`m${month}`]) || 0;
+              const newValue = Number(value) || 0;
+              if (newValue > oldValue) {
+                return 'custom increase';
+              } else if (newValue < oldValue) {
+                return 'custom decrease';
+              } else {
+                return 'custom no-change';
+              }
             } else {
-              return 'custom no-change';
-            }
-          } else {
-            if (value > 0) {
-              return 'custom increase';
-            } else if (value < 0) {
-              return 'custom no-change';
+              if (value > 0) {
+                return 'custom increase';
+              } else if (value < 0) {
+                return 'custom no-change';
+              }
             }
           }
         }
@@ -1295,8 +1422,10 @@
               year
             }
           });
-          if (response.data.success) {
+          if (response.data.success && response.data.data) {
             return response.data.data;
+          } else {
+            return [];
           }
         } catch (error) {
           console.error(error);
@@ -1305,6 +1434,7 @@
 
       const handleClickShowGoal = async () => {
         datePicker.value = null;
+        goalYear.value = currYear.value;
         drawer.value = true;
         handleDataKpi(null, null, currYear.value);
       }
@@ -1330,21 +1460,14 @@
       }
 
       const handleDataKpi = async (startMonth, endMonth, year) => {
+        loadingKPI.value = true;
         tableDataAll.value = [];
         const data = await getAllUserKpi(year);
-        const result = {};
-
-        data.forEach((item) => {
-          const {
-            user_id,
-            id
-          } = item;
-
-          if (!result[user_id] || result[user_id].id < id) {
-            result[user_id] = item;
-          }
-        });
-        Object.values(result).forEach(element => {
+        if (!data) {
+          loadingKPI.value = false;
+          return;
+        }
+        Object.values(data).forEach(element => {
           let programs = JSON.parse(element.kpi);
           let newRow = {
             user_name: element.user_name,
@@ -1354,25 +1477,35 @@
           Object.values(listProgram).forEach((program, index) => {
             newRow[program] = "-";
           })
+
           programs.forEach(program => {
             let total = 0;
+            const id = Object.keys(listProgram).find(key => listProgram[key] === program.program);
+            const coefficient = coefficients[id] || 1;
             if (startMonth && endMonth) {
               for (let i = startMonth; i <= endMonth; i++) {
                 if (Number(program[`m${i}`]) > 0) {
-                  total += Number(program[`m${i}`]);
+                  total += (Number(program[`m${i}`] || 0) * coefficient);
                 }
               }
             } else {
               for (let i = 1; i <= 12; i++) {
                 if (Number(program[`m${i}`]) > 0) {
-                  total += Number(program[`m${i}`]);
+                  total += (Number(program[`m${i}`] || 0) * coefficient);
                 }
               }
             }
-            newRow[program.program] = total;
+            newRow[program.program] = total % 1 !== 0 ? Math.round(total * 100) / 100 : total;
           })
           tableDataAll.value.push(newRow);
         });
+        loadingKPI.value = false;
+      }
+
+      const pickerOptions = {
+        disabledDate: (year) => {
+          return year < new Date().getFullYear() - 1 || year > new Date().getFullYear();
+        }
       }
 
       onMounted(async () => {
@@ -1380,7 +1513,7 @@
         const id = url.searchParams.get('id');
         const tab = url.searchParams.get('tab');
         let type = null;
-        if (tab) {
+        if (tab && id) {
           switch (tab) {
             case '1':
               activeName.value = 'pending';
@@ -1536,7 +1669,11 @@
         datePicker,
         handlePickMonth,
         titleGoal,
-        goalText
+        goalText,
+        titleGoalMember,
+        pickerOptions,
+        yearPicker,
+        handlePickYear
       }
     }
   });

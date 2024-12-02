@@ -113,13 +113,17 @@
   max-width: 1500px;
 }
 
+.el-drawer .content{
+  margin: 20px;
+}
+
+.el-drawer__body{
+  padding: 0 !important;
+}
+
 .member-kpi {
   max-width: 1100px;
   z-index: 1001;
-}
-
-.member-kpi .el-tabs {
-  padding: 15px 15px 0;
 }
 
 @media screen and (max-width: 1160px) {

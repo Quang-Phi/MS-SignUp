@@ -1,6 +1,6 @@
 <?php
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/templates/email_templates.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/templates/email_templates.php";
 
 use Bitrix\Main\Mail\Mail;
 

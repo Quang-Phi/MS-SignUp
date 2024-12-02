@@ -14,42 +14,52 @@ try {
     $kpiHistory = new kpiHistory();
 
     $arFilter = array(
-        'user_id' => $_GET['user_id'] ?? null,
-        'stage_id' => $_GET['stage_id'] ?? null
+        'user_id' => $_GET['user_id'],
+        'stage_id' => $_GET['stage_id'],
     );
 
-    if (!$_GET['ms_list_id']) {
-        $arr = array(
-            'user_id' => $_GET['user_id'],
-        );
-        $order = array(
-            'created_at' => 'desc'
-        );
+    $arr = array(
+        'user_id' => $_GET['user_id'],
+        'completed' => 1
+    );
 
-        $list = $msSignupList->GetList($order, $arr);
-        if (count($list) > 0) {
-            $msListId = $list['items'][0]['id'];
+    $order = array(
+        'id' => 'desc'
+    );
+
+    $list = $msSignupList->GetList($order, $arr);
+    if (count($list) > 0) {
+        $msListId = $list['items'][0]['id'];
+    }
+
+    $arFilter['ms_list_id'] = $msListId;
+
+    $res = $kpi->GetList(array(), $arFilter);
+
+    $result = array();
+    $data = array_merge([], $res);
+    foreach ($res as $key => $item) {
+        if ($item['year'] != $_GET['year']) {
+            $arr = [
+                'kpi_id' => $item['id'],
+                'stage_id' => $item['stage_id'],
+                'year' => $_GET['year']
+            ];
+            $arOrder = ['created_at' => 'DESC'];
+            $listHistory = $kpiHistory->GetList($arOrder, $arr);
+            if (count($listHistory) > 0) {
+                $data[$key]['kpi'] = $listHistory[0]['old_kpi'];
+                $data[$key]['year'] = $listHistory[0]['year'];
+            } else {
+                unset($data[$key]);
+            }
         }
-
-        $arFilter['ms_list_id'] = $msListId;
-    } else {
-        $arFilter['ms_list_id'] = $_GET['ms_list_id'];
     }
-    if ($_GET['year']) {
-        $arFilter['year'] = $_GET['year'];
-    }
-    $data = $kpi->GetList(array(), $arFilter);
 
-    $arFilterHistory = array(
-        'kpi_id' => $data[0]['id'],
-        'stage_id' => $data[0]['stage_id']
-    );
-    $history = $kpiHistory->GetList(array('created_at' => 'DESC'), $arFilterHistory);
     http_response_code(200);
     echo json_encode([
         'success' => true,
         'data' => $data,
-        'history' => $history[0] ? [$history[0]] : null,
         'timestamp' => time()
     ]);
 } catch (ApiException $e) {

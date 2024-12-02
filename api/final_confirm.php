@@ -3,10 +3,10 @@ require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.
 CModule::IncludeModule('socialnetwork');
 
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/socialnetwork/classes/general/user_group.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/services/mail_service.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/model/ms_signup_list.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/model/reviewer_stage.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/env.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/services/mail_service.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/model/ms_signup_list.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/model/reviewer_stage.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/env.php";
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");

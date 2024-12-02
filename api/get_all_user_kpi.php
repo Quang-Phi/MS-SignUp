@@ -1,61 +1,73 @@
 <?php
 require_once $_SERVER["DOCUMENT_ROOT"] . "/bitrix/modules/main/include/prolog_before.php";
-require_once $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/ms_signup_list.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
-require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/model/kpi_history.php';
-
-use Bitrix\Main\Application;
-use Bitrix\Main\DB\SqlQueryException;
+require_once $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-manage/model/ms_signup_list.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-manage/model/kpi.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-manage/env.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-manage/model/kpi_history.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 
 try {
-    $connection = Application::getConnection();
-    $sqlHelper = $connection->getSqlHelper();
-
     $kpi = new Kpi();
     $msSignupList = new MsSignupList($config);
+    $kpiHistory = new kpiHistory();
 
     $arFilter = array(
         'completed' => 1,
     );
     $data = $msSignupList->GetList(array(), $arFilter);
 
-    $year = date('Y');
-    $latestData = array_reduce($data['items'], function ($carry, $item) use ($year) {
-        $userId = $item['user_id'];
-        if (substr($item['join_date'], 0, 4) == $year) {
-            if (!isset($carry[$userId])) {
-                $carry[$userId] = $item;
-            } else {
-                $carry[$userId] = ($carry[$userId]['join_date'] > $item['join_date']) ? $carry[$userId] : $item;
+    if (count($data['items']) > 0) {
+        $ids = array_column($data['items'], 'id');
+
+        $arFilter = array(
+            'stage_id' => 3,
+            'ms_list_id' => $ids
+        );
+
+        $res = $kpi->GetList(array(), $arFilter);
+
+        $result = array();
+        $data = array_merge([], $res);
+        foreach ($res as $key => $item) {
+            if ($item['year'] != $_GET['year']) {
+                $arr = [
+                    'kpi_id' => $item['id'],
+                    'stage_id' => $item['stage_id'],
+                    'year' => $_GET['year']
+                ];
+                $arOrder = ['created_at' => 'DESC'];
+                $listHistory = $kpiHistory->GetList($arOrder, $arr);
+                if (count($listHistory) > 0) {
+                    $data[$key]['kpi'] = $listHistory[0]['old_kpi'];
+                    $data[$key]['year'] = $listHistory[0]['year'];
+                } else {
+                    unset($data[$key]);
+                }
+                $user_id = $item['user_id'];
+                $id = $item['id'];
             }
         }
-        return $carry;
-    }, []);
-    $latestIds = array_column($latestData, 'id');
 
-    $arFilter = array(
-        'stage_id' => 3,
-        'ms_list_id' => $latestIds
-    );
-    if (isset($_GET['year'])) {
-        $arFilter['year'] = $_GET['year'];
+        foreach ($data as $key => $value) {
+            $user_id = $value['user_id'];
+            $id = $value['id'];
+            if (!isset($result[$user_id]) || $result[$user_id]['id'] < $id) {
+                $result[$user_id] = $value;
+            }
+        }
+                
+        foreach ($result as $key => $value) {
+            $user = CUser::GetByID($value['user_id'])->Fetch();
+            $userFullName = htmlspecialchars($user["LAST_NAME"]) . " " . htmlspecialchars($user["NAME"]);
+            $result[$key]['user_name'] = $userFullName;
+        }
     }
-    
-    $data = $kpi->GetList(array(), $arFilter);
-    foreach ($data as $key => $value) {
-        $user = CUser::GetByID($value['user_id'])->Fetch();
-        $userFullName = htmlspecialchars($user["LAST_NAME"]) . " " . htmlspecialchars($user["NAME"]);
-        $data[$key]['user_name'] = $userFullName;
-    }
-
     echo json_encode([
         'success' => true,
-        'data' => $data,
+        'data' => $result,
         'timestamp' => time()
     ]);
 } catch (ApiException $e) {

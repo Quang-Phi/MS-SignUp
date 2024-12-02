@@ -2,9 +2,9 @@
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php";
 require $_SERVER["DOCUMENT_ROOT"] .
     "/bitrix/modules/main/include/prolog_before.php";
-require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-signup/env.php';
+require $_SERVER["DOCUMENT_ROOT"] . '/page-custom/ms-manage/env.php';
 
-$APPLICATION->SetTitle("MS Sign Up");
+$APPLICATION->SetTitle("MS Manage");
 ?>
 
 <!DOCTYPE html>
@@ -50,7 +50,7 @@ $APPLICATION->SetTitle("MS Sign Up");
 </head>
 
 <body>
-    <div class="mt-3" id="ms-signup">
+    <div class="mt-3" id="ms-manage">
        <div class="list-link">
            <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/register/'; ?>" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form đăng ký MS</a>
            <a href="<?php echo $config['base_url'] . '/' . $config['root_folder'] . '/form/unregister/'; ?>" class="link-custom"><img src="./public/images/goal.png" alt='icon' />Form hủy đăng ký MS</a>

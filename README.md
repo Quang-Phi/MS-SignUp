@@ -1,4 +1,4 @@
-MS-Signup/
+MS-Manage/
 ├── api/
 │   ├── approve_ms_register.php
 │   ├── create_kpi.php
@@ -55,20 +55,21 @@ CREATE TABLE s2config.kpi (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=315 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=401 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 CREATE TABLE s2config.kpi_history (
   `id` int NOT NULL AUTO_INCREMENT,
   `stage_id` int NOT NULL,
   `kpi_id` int NOT NULL,
-  `old_kpi` TEXT,
+  `year` int NOT NULL,
+  `old_kpi` text COLLATE utf8mb4_unicode_ci,
   `modified_by` int NOT NULL,
   `is_temporary` boolean DEFAULT false,
   `is_use` boolean DEFAULT true,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=805 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 CREATE TABLE s2config.ms_signup_list (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -85,7 +86,9 @@ CREATE TABLE s2config.ms_signup_list (
   `list_propose` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `confirmation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `process_deal` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `form_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'register',
   `completed` boolean DEFAULT false,
+  `is_active` boolean DEFAULT true,
   `flag_edit_3` boolean DEFAULT false,
   `flag_edit_4` boolean DEFAULT false,
   `comments` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -93,25 +96,25 @@ CREATE TABLE s2config.ms_signup_list (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=252 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=319 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 CREATE TABLE s2config.stage (
   `id` int NOT NULL AUTO_INCREMENT,
   `stage_id` int NOT NULL,
-  `label` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `label` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `require_kpi` boolean DEFAULT false,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
 CREATE TABLE s2config.reviewer_stage (
   `id` int NOT NULL AUTO_INCREMENT,
   `reviewer_id` int NOT NULL,
   `stage_id` int NOT NULL,
   `ms_list_id` int NOT NULL,
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=1640 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

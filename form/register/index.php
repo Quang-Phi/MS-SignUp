@@ -2,7 +2,7 @@
 require $_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php";
 require $_SERVER["DOCUMENT_ROOT"] .
     "/bitrix/modules/main/include/prolog_before.php";
-require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-signup/env.php";
+require $_SERVER["DOCUMENT_ROOT"] . "/page-custom/ms-manage/env.php";
 
 $APPLICATION->SetTitle("Đăng ký MS");
 
