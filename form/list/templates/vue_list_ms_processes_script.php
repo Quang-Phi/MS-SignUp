@@ -46,9 +46,12 @@
       const hasTimeline = ref(true);
       const stageDeal = ref([]);
       const flagGetClass = ref(false);
-      const currMonth = ref(new Date().getMonth() + 1);
-      const currYear = ref(new Date().getFullYear());
-      const nextYear = ref(new Date().getFullYear() + 1);
+      // const currMonth = ref(new Date().getMonth() + 1);
+      // const currYear = ref(new Date().getFullYear());
+      // const nextYear = ref(new Date().getFullYear() + 1);
+      const currMonth = ref(1);
+      const currYear = ref(2025);
+      const nextYear = ref(currYear.value + 1);
       const isEdit = ref(false);
       const loading = ref(false);
       const tableLoading = ref(false);
@@ -1273,21 +1276,23 @@
       }
 
       const handlePickYear = async (value) => {
+        if (!value) {
+          yearPicker.value = new Date();
+          value = yearPicker.value;
+        }
         loadingMemberKPI.value = true;
         tableDataKpiMemberHR.value = [];
         tableDataKpiMemberMSA.value = [];
 
-        const res = await getTeamMsMember();
-        if (res) {
-          const promises = listProposer.value.map(element => {
-            if (element.label == 'MSA') {
-              return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_MSA', value.getFullYear());
-            } else if (element.label == 'HR') {
-              return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_HR', value.getFullYear());
-            }
-          });
-          const responses = await Promise.all(promises);
-        }
+        const promises = listProposer.value.map(element => {
+          if (element.label == 'MSA') {
+            return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_MSA', value.getFullYear());
+          } else if (element.label == 'HR') {
+            return getKpiMsMember(activeNameKpi.value, element.stage_id, 'member_HR', value.getFullYear());
+          }
+        });
+        const responses = await Promise.all(promises);
+
         loadingMemberKPI.value = false;
       }
 
@@ -1296,6 +1301,7 @@
         tableDataKpiMemberHR.value = [];
         tableDataKpiMemberMSA.value = [];
         activeNameKpi.value = tab.props.name;
+
         const year = yearPicker.value.getFullYear();
         const promises = listProposer.value.map(element => {
           if (element.label == 'MSA') {
@@ -1305,6 +1311,7 @@
           }
         });
         const responses = await Promise.all(promises);
+
         loadingMemberKPI.value = false;
       }
 
@@ -1440,6 +1447,10 @@
       }
 
       const handlePickMonth = (value) => {
+        if (!value) {
+          goalYear.value = currYear.value;
+          value = new Date();
+        }
         const start = value?.[0] || null;
         const end = value?.[1] || null;
 
