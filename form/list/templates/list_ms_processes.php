@@ -369,19 +369,19 @@
 
                 <div class="form-table">
                     <el-table
-                        :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR"
+                        :data="proposer. stage_code == 'msa' ? tableDataKpiMSA : tableDataKpiHR"
                         border
                         style="width: 100%"
                         max-height="500"
-                        :show-summary="proposer.stage_id != 4"
+                        :show-summary="proposer. stage_code != 'hr'"
                         :summary-method="getSummaries">
                         <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
                         <template v-for="month in 12" :key="month">
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :class='getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_id, form.status)'
-                                        :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
+                                        :class='getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_code, form.status)'
+                                        :disabled="form.completed == true ? (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR) : (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR))"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
                                         @input="(event) => handleInputChange(scope.$index, month, event, proposer)"
@@ -398,7 +398,7 @@
                         </el-table-column>
 
                         <el-table-column
-                            v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR"
+                            v-if="proposer. stage_code == 'msa' ? editKpiMSA : editKpiHR"
                             fixed="right"
                             label="Hành động"
                             min-width="100">
@@ -414,7 +414,7 @@
                             </template>
                         </el-table-column>
                     </el-table>
-                    <el-select v-if="proposer.stage_id == 3 ? editKpiMSA : false" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                    <el-select v-if="proposer. stage_code == 'msa' ? editKpiMSA : false" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
                         <el-option
                             v-for="program in listProgram"
                             @click="onAddItem(program, proposer.label)"
@@ -425,7 +425,7 @@
                     </el-select>
                 </div>
 
-                <el-form-item v-if="form.completed == true ? proposer.stage_id == 3 ? form.flag_edit_3 == true : form.flag_edit_4 == true : true" class="change-kpi_btn">
+                <el-form-item v-if="form.completed == true ? proposer. stage_code == 'msa' ? form.flag_edit_3 == true : form.flag_edit_4 == true : true" class="change-kpi_btn">
                     <el-popconfirm
                         title="Điều chỉnh sẽ cần duyệt lại, xác nhận?"
                         @confirm="changeKpi(proposer, form)">
@@ -453,7 +453,7 @@
                                 :title="'Lịch sử thay đổi KPI - ' + proposer.label"
                                 :name="proposer.stage_id">
                                 <div v-loading="timelineLoading" element-loading-text="Loading...">
-                                    <el-timeline style="max-width: 900px">
+                                    <el-timeline style="max-width: 1020px">
                                         <el-timeline-item
                                             v-for="(item, index) in timelineData[proposer.stage_id]"
                                             :key="`${proposer.stage_id}_${item.id}_${index}`"
@@ -468,7 +468,7 @@
                                                     </div>
                                                 </template>
                                                 <el-table
-                                                    :show-summary="proposer.stage_id != 4"
+                                                    :show-summary="proposer. stage_code != 'hr'"
                                                     :summary-method="getSummaries"
                                                     :data="JSON.parse(item.old_kpi || '[]')"
                                                     border
@@ -484,7 +484,7 @@
                                                         <el-table-column
                                                             :prop="'m' + month"
                                                             :label="'T' + month"
-                                                            min-width="50">
+                                                            min-width="60">
                                                             <template #default="scope">
                                                                 <span>{{ scope.row['m' + month] || 0 }}</span>
                                                             </template>
@@ -678,7 +678,7 @@
                             :title="'Lịch sử thay đổi KPI'"
                             :name="form.stage_id">
                             <div v-loading="timelineLoading" element-loading-text="Loading...">
-                                <el-timeline style="max-width: 900px">
+                                <el-timeline style="max-width: 1020px">
                                     <el-timeline-item
                                         v-for="(item, index) in timelineData[form.stage_id]"
                                         :key="`${form.stage_id}_${item.id}_${index}`"
@@ -709,7 +709,7 @@
                                                     <el-table-column
                                                         :prop="'m' + month"
                                                         :label="'T' + month"
-                                                        min-width="50">
+                                                        min-width="60">
                                                         <template #default="scope">
                                                             <span>{{ scope.row['m' + month] || 0 }}</span>
                                                         </template>
@@ -794,19 +794,19 @@
 
                 <div class="form-table">
                     <el-table
-                        :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR"
+                        :data="proposer. stage_code == 'msa' ? tableDataKpiMSA : tableDataKpiHR"
                         border
                         style="width: 100%"
                         max-height="500"
-                        :show-summary="proposer.stage_id != 4"
+                        :show-summary="proposer. stage_code != 'hr'"
                         :summary-method="getSummaries">
                         <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
                         <template v-for="month in 12" :key="month">
                             <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                 <template #default="scope">
                                     <el-input
-                                        :class="getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_id, form.status)"
-                                        :disabled="proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR"
+                                        :class="getClass(scope.row.program, scope.row[`m${month}`], month, proposer.stage_code, form.status)"
+                                        :disabled="proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR"
                                         size="small"
                                         v-model="scope.row[`m${month}`]"
                                         @input="(event) => handleInputChange(scope.$index, month, event, proposer)"
@@ -823,7 +823,7 @@
                         </el-table-column>
 
                         <el-table-column
-                            v-if="proposer.stage_id == 3 ? editKpiMSA : editKpiHR"
+                            v-if="proposer. stage_code == 'msa' ? editKpiMSA : editKpiHR"
                             fixed="right"
                             label="Hành động"
                             min-width="100">
@@ -839,7 +839,7 @@
                             </template>
                         </el-table-column>
                     </el-table>
-                    <el-select v-if="proposer.stage_id == 3 ? editKpiMSA : false" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
+                    <el-select v-if="proposer. stage_code == 'msa' ? editKpiMSA : false" class="mt-4" style="width: 100%" placeholder="Chọn chương trình">
                         <el-option
                             v-for="program in listProgram"
                             @click="onAddItem(program, proposer.label)"
@@ -878,7 +878,7 @@
                                 :title="'Lịch sử thay đổi KPI - ' + proposer.label"
                                 :name="proposer.stage_id">
                                 <div v-loading="timelineLoading" element-loading-text="Loading...">
-                                    <el-timeline style="max-width: 900px">
+                                    <el-timeline style="max-width: 1020px">
                                         <el-timeline-item
                                             v-for="(item, index) in timelineData[proposer.stage_id]"
                                             :key="`${proposer.stage_id}_${item.id}_${index}`"
@@ -893,7 +893,7 @@
                                                     </div>
                                                 </template>
                                                 <el-table
-                                                    :show-summary="proposer.stage_id != 4"
+                                                    :show-summary="proposer. stage_code != 'hr'"
                                                     :summary-method="getSummaries"
                                                     :data="JSON.parse(item.old_kpi || '[]')"
                                                     border
@@ -909,7 +909,7 @@
                                                         <el-table-column
                                                             :prop="'m' + month"
                                                             :label="'T' + month"
-                                                            min-width="50">
+                                                            min-width="60">
                                                             <template #default="scope">
                                                                 <span>{{ scope.row['m' + month] || 0 }}</span>
                                                             </template>
@@ -978,7 +978,7 @@
             </div>
 
             <div class="kpi_item" v-for="proposer in listProposer" :key="proposer.stage_id">
-                <div v-if="proposer.stage_id <= form.stage_id || (proposer.stage_id == 3 ? count(tableDataKpiMSA) > 0 : false)">
+                <div v-if="proposer.stage_id <= form.stage_id || (proposer. stage_code == 'msa' ? count(tableDataKpiMSA) > 0 : false)">
                     <el-form-item label="Bảng KPI:" prop="stage">
                         <a :href="`${urlUserInfo}/${form.reviewers.find(reviewer => reviewer.stage_id == proposer.stage_id).reviewer_id}/`" target="_blank">
                             <span v-html="textReviewerName2(proposer)"></span>
@@ -987,13 +987,13 @@
 
                     <div class="form-table">
                         <el-table
-                            :data="proposer.stage_id == 3 ? tableDataKpiMSA : tableDataKpiHR"
+                            :data="proposer. stage_code == 'msa' ? tableDataKpiMSA : tableDataKpiHR"
                             border
                             style="width: 100%"
-                            :show-summary="proposer.stage_id != 4"
+                            :show-summary="proposer. stage_code != 'hr'"
                             :summary-method="getSummaries"
                             max-height="500">
-                            <el-table-column fixed prop="program" :label="proposer.stage_id == 3 ? 'Chương trình' : 'Tháng'" min-width="140"></el-table-column>
+                            <el-table-column fixed prop="program" :label="proposer. stage_code == 'msa' ? 'Chương trình' : 'Tháng'" min-width="140"></el-table-column>
                             <template v-for="month in 12" :key="month">
                                 <el-table-column :prop="`m${month}`" :label="'T' + month" min-width="70">
                                     <template #default="scope">
@@ -1028,7 +1028,7 @@
                                     :title="'Lịch sử thay đổi KPI - ' + proposer.label"
                                     :name="proposer.stage_id">
                                     <div v-loading="timelineLoading" element-loading-text="Loading...">
-                                        <el-timeline style="max-width: 900px">
+                                        <el-timeline style="max-width: 1020px">
                                             <el-timeline-item
                                                 v-for="(item, index) in timelineData[proposer.stage_id]"
                                                 :key="`${proposer.stage_id}_${item.id}_${index}`"
@@ -1043,7 +1043,7 @@
                                                         </div>
                                                     </template>
                                                     <el-table
-                                                        :show-summary="proposer.stage_id != 4"
+                                                        :show-summary="proposer. stage_code != 'hr'"
                                                         :summary-method="getSummaries"
                                                         :data="JSON.parse(item.old_kpi || '[]')"
                                                         border
@@ -1059,7 +1059,7 @@
                                                             <el-table-column
                                                                 :prop="'m' + month"
                                                                 :label="'T' + month"
-                                                                min-width="50">
+                                                                min-width="60">
                                                                 <template #default="scope">
                                                                     <span>{{ scope.row['m' + month] || 0 }}</span>
                                                                 </template>
@@ -1125,11 +1125,11 @@
 
                     <div class="form-table">
                         <el-table
-                            :data="proposer.stage_id == 3 ? tableDataKpiMemberMSA : tableDataKpiMemberHR"
+                            :data="proposer. stage_code == 'msa' ? tableDataKpiMemberMSA : tableDataKpiMemberHR"
                             border
                             style="width: 100%"
                             max-height="500"
-                            :show-summary="proposer.stage_id != 4"
+                            :show-summary="proposer. stage_code != 'hr'"
                             :summary-method="getSummaries">
                             <el-table-column fixed prop="program" label="Chương trình" min-width="140"></el-table-column>
                             <template v-for="month in 12" :key="month">
@@ -1137,7 +1137,7 @@
                                     <template #default="scope">
                                         <el-input
                                             class="custom"
-                                            :disabled="form.completed == true ? (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR) : (proposer.stage_id == 3 ? !editKpiMSA : !editKpiHR))"
+                                            :disabled="form.completed == true ? (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR) : (currMonth < 12 ? month <= currMonth || (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR) : (proposer. stage_code == 'msa' ? !editKpiMSA : !editKpiHR))"
                                             size="small"
                                             v-model="scope.row[`m${month}`]"
                                             @input="(event) => handleInputChange(scope.$index, month, event, proposer)"

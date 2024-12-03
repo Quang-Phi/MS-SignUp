@@ -87,7 +87,7 @@
       const noMoreText = `Không còn dữ liệu`;
       const textBtn4 = `Điều chỉnh KPI`;
       const goalText = `KPIs MS`;
-      const goalYear = ref(new Date().getFullYear());
+      const goalYear = ref(currYear.value);
 
       const textReviewerName = computed(() => {
         return `<span>${form.value.stage}</span>`
@@ -797,55 +797,63 @@
         return pagination;
       });
 
+
       const handleInputChange = (index, month, value, proposer) => {
+        let label = '';
+        if (proposer.label) {
+          label = proposer.label;
+        } else {
+          proposer.stage == "HR" ? proposer.stage_code = 'hr' : '';
+        }
         isEdit.value = true;
         value = value.trim();
         const regex = /^[0-9.,]+$/;
         if (!regex.test(value) || isNaN(value)) {
           value = '';
         }
-        if (proposer) {
-          switch (proposer.label) {
-            case 'MSA':
-              if (!tableDataKpiMSA.value[index]) {
-                tableDataKpiMSA.value[index] = {};
-              }
-              tableDataKpiMSA.value[index] = {
-                ...tableDataKpiMSA.value[index],
-                [`m${month}`]: value ? Math.round(value) : 0
-              };
-              break;
-            case 'HR':
+        switch (label) {
+          case 'MSA':
+            if (!tableDataKpiMSA.value[index]) {
+              tableDataKpiMSA.value[index] = {};
+            }
+            tableDataKpiMSA.value[index] = {
+              ...tableDataKpiMSA.value[index],
+              [`m${month}`]: value ? Math.round(value) : 0
+            };
+            break;
+          case 'HR':
+
+            const parts = value.split('.');
+            if (parts.length > 1) {
+              value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+
+            if (!tableDataKpiHR.value[index]) {
+              tableDataKpiHR.value[index] = {};
+            }
+            tableDataKpiHR.value[index] = {
+              ...tableDataKpiHR.value[index],
+              [`m${month}`]: value
+            };
+            break;
+          default:
+            historyDataKpi.value = JSON.parse(JSON.stringify(tempTableDataKpi.value));
+            if (!tableDataKpi.value[index]) {
+              tableDataKpi.value[index] = {};
+            }
+            if (proposer.stage_code == 'hr') {
               const parts = value.split('.');
               if (parts.length > 1) {
                 value = parts[0] + '.' + parts[1].substring(0, 2);
               }
-              if (!tableDataKpiHR.value[index]) {
-                tableDataKpiHR.value[index] = {};
-              }
-              tableDataKpiHR.value[index] = {
-                ...tableDataKpiHR.value[index],
-                [`m${month}`]: value
-              };
-              break;
-            default:
-              historyDataKpi.value = JSON.parse(JSON.stringify(tempTableDataKpi.value));
-              if (!tableDataKpi.value[index]) {
-                tableDataKpi.value[index] = {};
-              }
-              if (proposer.stage_id == 4) {
-                const parts = value.split('.');
-                if (parts.length > 1) {
-                  value = parts[0] + '.' + parts[1].substring(0, 2);
-                }
-              }
-              tableDataKpi.value[index] = {
-                ...tableDataKpi.value[index],
-                [`m${month}`]: proposer.stage_id == 4 ? value : value ? Math.round(value) : 0
-              };
-              break;
-          }
+            }
+            tableDataKpi.value[index] = {
+              ...tableDataKpi.value[index],
+              [`m${month}`]: proposer.stage_code == 'hr' ? value : value ? Math.round(value) : 0
+            };
+            break;
         }
+
       };
 
       document.addEventListener('keydown', function(event) {
@@ -1151,10 +1159,6 @@
         }
       }
 
-      const checkStep = (id) => {
-        return Number(id) === 4;
-      }
-
       const getSummaries = (param) => {
         const {
           columns,
@@ -1386,7 +1390,7 @@
       const getClass = (program, value, month, stage = null, status) => {
         if (status == 'pending' || flagGetClass.value == true) {
           let table = null;
-          stage ? (stage == 3 ? table = "MSA" : table = "HR") : table = null;
+          stage ? (stage == 'msa' ? table = "MSA" : table = "HR") : table = null;
           let baseTable = [];
           switch (table) {
             case 'MSA':
@@ -1440,7 +1444,7 @@
       }
 
       const handleClickShowGoal = async () => {
-        datePicker.value = null;
+        datePicker.value = [new Date(new Date().getFullYear(), 0, 1), new Date(new Date().getFullYear(), 11, 31)];
         goalYear.value = currYear.value;
         drawer.value = true;
         handleDataKpi(null, null, currYear.value);
@@ -1513,16 +1517,11 @@
         loadingKPI.value = false;
       }
 
-      const pickerOptions = {
-        disabledDate: (year) => {
-          return year < new Date().getFullYear() - 1 || year > new Date().getFullYear();
-        }
-      }
-
       onMounted(async () => {
         const url = new URL(window.location.href);
         const id = url.searchParams.get('id');
         const tab = url.searchParams.get('tab');
+
         let type = null;
         if (tab && id) {
           switch (tab) {
@@ -1652,7 +1651,6 @@
         isDisabled,
         getSummaries,
         calculateRowTotal,
-        checkStep,
         checkChangeKpi,
         timelineLoadingText,
         noMoreText,
@@ -1682,7 +1680,6 @@
         titleGoal,
         goalText,
         titleGoalMember,
-        pickerOptions,
         yearPicker,
         handlePickYear
       }

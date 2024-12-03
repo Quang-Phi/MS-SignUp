@@ -43,42 +43,51 @@ try {
   ];
 
   $res = $msSignupList->Add($data);
-  $arr = [
-    [
-      'stage_id' => 2,
-      'reviewer_id' => intval($formData['msl_id']),
-      'ms_list_id' => $res
-    ],
-    [
-      'stage_id' => 1,
-      'reviewer_id' => intval($formData['manager']),
-      'ms_list_id' => $res
-    ],
-    [
-      'stage_id' => 5,
-      'reviewer_id' => $formData['user_id'],
-      'ms_list_id' => $res
-    ]
-  ];
-
-  if (!empty($config['hr_ids'])) {
-    foreach ($config['hr_ids'] as $key => $id) {
-      $arr[] = [
-        'stage_id' => 4,
-        'reviewer_id' => $id,
-        'ms_list_id' => $res
-      ];
-    }
-  }
-
-  $arrMsaId = array_unique(array_merge([intval($formData['msa_id'])], $config['msa_ids']));
-  if (!empty($arrMsaId)) {
-    foreach ($arrMsaId as $key => $id) {
-      $arr[] = [
-        'stage_id' => 3,
-        'reviewer_id' => $id,
-        'ms_list_id' => $res
-      ];
+  $arr = array();
+  
+  foreach ($listStage as $item) {
+    switch ($item['stage_code']) {
+      case 'msl':
+        $arr[] = [
+          'stage_id' => intval($item['stage_id']),
+          'reviewer_id' => intval($formData['msl_id']),
+          'ms_list_id' => $res
+        ];
+        break;
+      case 'ld':
+        $arr[] = [
+          'stage_id' => intval($item['stage_id']),
+          'reviewer_id' => intval($formData['manager']),
+          'ms_list_id' => $res
+        ];
+        break;
+      case 'ms':
+        $arr[] = [
+          'stage_id' => intval($item['stage_id']),
+          'reviewer_id' => intval($formData['user_id']),
+          'ms_list_id' => $res
+        ];
+        break;
+      case 'msa':
+        $msaIds = array_unique(array_merge([intval($formData['msa_id'])], $config['msa_ids']));
+        foreach ($msaIds as $id) {
+          $arr[] = [
+            'stage_id' => intval($item['stage_id']),
+            'reviewer_id' => intval($id),
+            'ms_list_id' => $res
+          ];
+        }
+        break;
+      case 'hr':
+        $hrIds = array_unique($config['hr_ids']);
+        foreach ($hrIds as $id) {
+          $arr[] = [
+            'stage_id' => intval($item['stage_id']),
+            'reviewer_id' => intval($id),
+            'ms_list_id' => $res
+          ];
+        }
+        break;
     }
   }
 

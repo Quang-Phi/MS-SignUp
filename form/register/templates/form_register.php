@@ -131,11 +131,11 @@
                     collapse-tags-tooltip
                     :max-collapse-tags="3"
                     placeholder="Select">
-                    <el-option
-                        v-for="item in listPropose"
-                        :key="item"
-                        :label="item"
-                        :value="item" />
+                   <el-option
+                     v-for="item in listPropose"
+                     :key="item.id"
+                     :label="item.dpm ? item.label + ' (' + item.dpm + ')' : item.label"
+                     :value="item.dpm ? item.label + ' (' + item.dpm + ')' : item.label" />
                 </el-select>
             </el-form-item>
 

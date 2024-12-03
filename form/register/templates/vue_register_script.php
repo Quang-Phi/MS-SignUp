@@ -44,15 +44,7 @@
                 msa_id: null,
             });
 
-            const listPropose = ref([
-                "Quyền truy cập CRM (DCC)",
-                "Gia nhập nhóm email MS (HR)",
-                "Thêm vào nhóm và phòng ban MS (HR)",
-                "Line tổng đài Omical (ICT)",
-                "Tai nghe",
-                "Webcam",
-                "SIM Zalo (có 4G)"
-            ])
+            const listPropose = ref([]);
 
             const pageTitle = `Form đăng ký tham gia hoạt động MS`;
             const dialogContent = `
@@ -250,6 +242,20 @@
                 }
             }
 
+            const getListPropose = async () => {
+                try {
+                    const response = await axios.get('../../api/get_list_propose.php');
+                    if (response.data && response.data.success === true) {
+                        listPropose.value = response.data.data;
+                    } else {
+                        throw new Error('No data received from server');
+                    }
+                } catch (error) {
+                    console.error('Error fetching submitted forms:', error);
+                    throw error;
+                }
+            };
+
             onMounted(async () => {
                 if (msId) {
                     showForm.value = 1;
@@ -263,6 +269,7 @@
                 }
                 showForm.value = 3;
                 await getListTeamMS();
+                await getListPropose();
                 try {
                     manager.value = await getHeadDepartment(userId, 'userId');
                     if (manager) {
